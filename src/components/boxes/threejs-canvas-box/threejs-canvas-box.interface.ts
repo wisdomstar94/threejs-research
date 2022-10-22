@@ -1,0 +1,17 @@
+import React, { CSSProperties } from "react";
+
+export declare namespace IThreejsCanvasBox {
+  export interface RefObject {
+    getCanvas: () => HTMLCanvasElement | null;
+    // setRenderer: (renderer: THREE.WebGLRenderer) => void;
+    // addCamera: (cameras: THREE.PerspectiveCamera) => void;
+  }
+
+  export interface Props {
+    __style?: CSSProperties;
+    __rendererRef?: { current: THREE.WebGLRenderer | undefined };
+    __camerasRef?: { current: THREE.PerspectiveCamera[] | undefined };
+
+    children?: React.ReactNode;
+  }
+}
