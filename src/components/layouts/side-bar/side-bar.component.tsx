@@ -15,6 +15,7 @@ const SideBar = (props: ISideBar.Props) => {
     { menuName: 'threejs-001-bloom', menuLink: '/threejs-example/threejs-001-bloom' },
     { menuName: 'threejs-002-bloom-selective', menuLink: '/threejs-example/threejs-002-bloom-selective' },
     { menuName: 'threejs-003-glass-material', menuLink: '/threejs-example/threejs-003-glass-material' },
+    { menuName: 'threejs-004-multiple-box-cannon', menuLink: '/threejs-example/threejs-004-multiple-box-cannon' },
   ]);
 
   useEffect(() => {
