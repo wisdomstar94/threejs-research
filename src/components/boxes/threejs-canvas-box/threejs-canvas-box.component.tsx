@@ -1,4 +1,5 @@
-import { ForwardedRef, forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import { ForwardedRef, forwardRef, useCallback, useEffect, useImperativeHandle, useRef } from "react";
+import { Mesh } from "three";
 import useAddEventListener from "../../../hooks/use-add-event-listener/use-add-event-listener.hook";
 import useAddResizeEventListener from "../../../hooks/use-add-resize-event-listener/use-add-resize-event-listener.hook";
 import styles from "./threejs-canvas-box.component.module.scss";
@@ -52,6 +53,24 @@ const ThreejsCanvasBox = forwardRef((props: IThreejsCanvasBox.Props, ref: Forwar
       props.__onMousemove(event);
     }
   });
+
+  useEffect(() => {
+    return () => {
+      props.__scenesRef?.current?.forEach((scene) => {
+        const objects: THREE.Object3D<THREE.Event>[] = [];
+        scene.traverse((obj) => objects.push(obj));
+        console.log('objects', objects);
+        objects.forEach((object) => {
+          scene.remove(object);
+          if (object instanceof Mesh) {
+            object.material.dispose();
+            object.geometry.dispose();
+          }
+        });
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>

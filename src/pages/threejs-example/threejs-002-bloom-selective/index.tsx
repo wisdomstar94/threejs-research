@@ -51,7 +51,7 @@ const PageContents = () => {
 
   const globalRendererRef = useRef<THREE.WebGLRenderer>();
   const globalCamerasRef = useRef<THREE.PerspectiveCamera[]>([]);
-  const globalSceneRef = useRef<THREE.Scene>();
+  const globalScenesRef = useRef<THREE.Scene[]>([]);
   const globalBloomComposerRef = useRef<EffectComposer>();
   const globalFinalComposerRef = useRef<EffectComposer>();
   const millisecondRef = useRef<number>(0);
@@ -97,7 +97,7 @@ const PageContents = () => {
     // scene
     const scene = new THREE.Scene();
     scene.background = null;
-    globalSceneRef.current = scene;
+    globalScenesRef.current.push(scene);
 
     // light
     const worldLight = new THREE.AmbientLight(0xffffff, 1);
@@ -407,7 +407,8 @@ const PageContents = () => {
       <ThreejsCanvasBox
         ref={threejsCanvasBoxRef}
         __rendererRef={globalRendererRef}
-        __camerasRef={globalCamerasRef} />
+        __camerasRef={globalCamerasRef}
+        __scenesRef={globalScenesRef} />
     </>
   );
 };  
