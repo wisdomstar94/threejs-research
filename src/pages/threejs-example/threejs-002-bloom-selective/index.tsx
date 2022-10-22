@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.component";
 import CommonLayout from "../../../components/layouts/common-layout/common-layout.component";
 import * as THREE from 'three';
@@ -7,17 +7,35 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
-import { ThreeCannonObject } from "../../../librarys/three-object-util/three-object-util.library";
+import { getObjectFromMouseEvent, ThreeCannonObject } from "../../../librarys/three-object-util/three-object-util.library";
 import * as CANNON from 'cannon-es';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.interface";
+import { fromEvent, pairwise, startWith, Subscription } from 'rxjs';
+
+interface BoxInterfacae {
+  name: string;
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  size: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  isBloom: boolean;
+  color: number;
+}
+
 
 const IndexPage = () => {
   return (
     <>
       <Head>
-        <title>threejs-001-bloom</title>
-        <meta name="description" content="threejs-001-bloom page!" />
+        <title>threejs-002-bloom-selective</title>
+        <meta name="description" content="threejs-002-bloom-selective page!" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
@@ -39,6 +57,7 @@ const PageContents = () => {
   const millisecondRef = useRef<number>(0);
   const boxThreeCannonObjectsRef = useRef<Set<ThreeCannonObject>>(new Set<ThreeCannonObject>());
   const allObjectsRef = useRef<Set<THREE.Object3D<any>>>(new Set<THREE.Object3D<any>>());
+  const subscriptionsRef = useRef<Set<Subscription>>(new Set());
 
   useEffect(() => {
     const canvas = threejsCanvasBoxRef.current?.getCanvas();
@@ -46,7 +65,8 @@ const PageContents = () => {
       return;
     }
 
-    const ENTIRE_SCENE = 0, BLOOM_SCENE = 1;
+    const ENTIRE_SCENE = 0; 
+    const BLOOM_SCENE = 1;
     const bloomLayer = new THREE.Layers();
     bloomLayer.set( BLOOM_SCENE );
     const darkMaterial = new THREE.MeshBasicMaterial( { color: 'black' } );
@@ -62,27 +82,27 @@ const PageContents = () => {
     renderer.setClearColor(0xffffff, 0);
     renderer.setSize(800, 500);
     globalRendererRef.current = renderer;
-    // setGlobalRenderer(renderer);
 
     // cannon
     const world = new CANNON.World();
     world.gravity.set(0, -15.82, 0);
 
     // camera
-    const camera = new THREE.PerspectiveCamera(45, 800 / 600, 0.1, 1000);
-    camera.position.set(10, 10, 10);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(30, 20, 30);
     camera.setFocalLength(20);
     camera.lookAt(new THREE.Vector3(0, 0, 0));
     globalCamerasRef.current.push(camera);
 
     // scene
-    globalSceneRef.current = new THREE.Scene();
-    globalSceneRef.current.background = null;
+    const scene = new THREE.Scene();
+    scene.background = null;
+    globalSceneRef.current = scene;
 
     // light
     const worldLight = new THREE.AmbientLight(0xffffff, 1);
     worldLight.layers.enableAll();
-    globalSceneRef.current.add(worldLight);
+    scene.add(worldLight);
 
     const spotLight = new THREE.SpotLight(0xFFFFFF, 2);
     spotLight.position.set(50, 50, 50);
@@ -90,7 +110,7 @@ const PageContents = () => {
     spotLight.angle = 0.7;
     const obj = new THREE.Object3D();
     obj.position.set(0, 0, 0);
-    globalSceneRef.current.add(obj);
+    scene.add(obj);
     spotLight.target = obj;
     spotLight.shadow.radius = 4;
     spotLight.shadow.blurSamples = 10;
@@ -98,13 +118,13 @@ const PageContents = () => {
     spotLight.shadow.mapSize.width = 1024 * 10;
     spotLight.shadow.mapSize.height = 1024 * 10;
     spotLight.layers.enableAll();
-    globalSceneRef.current.add(spotLight);
+    scene.add(spotLight);
     allObjectsRef.current.add(spotLight);
 
     // plane add
     const planeThreeCannonObject = new ThreeCannonObject({
       world: world,
-      scene: globalSceneRef.current,
+      scene: scene,
       threeObject: () => {
         const plane = new THREE.Mesh(
           new THREE.BoxGeometry(400, 2, 400), // geometry
@@ -130,18 +150,42 @@ const PageContents = () => {
     });
 
     // box add
-    const boxItems = new Set<{ position: { x: number; y: number; z: number; }; size: { x: number; y: number; z: number; }; isBloom: boolean;}>();
-    boxItems.add({ position: { x: 1, y: 10, z: -3 }, size: { x: 5, y: 5, z: 2 }, isBloom: true, });
-    boxItems.add({ position: { x: 1, y: 10, z: -7 }, size: { x: 5, y: 5, z: 2 }, isBloom: false, });
-    boxItems.forEach((item) => {
+    const boxItems = new Set<BoxInterfacae>();
+    boxItems.add({
+      name: 'red1',
+      position: { x: 1, y: 10, z: -3 },
+      size: { x: 5, y: 5, z: 2 },
+      isBloom: false,
+      color: 0xff0000,
+    });
+    boxItems.add({
+      name: 'red2',
+      position: { x: 1, y: 10, z: -10 },
+      size: { x: 5, y: 5, z: 2 },
+      isBloom: false,
+      color: 0xff0000,
+    });
+    boxItems.add({
+      name: 'pink1',
+      position: { x: 10, y: 10, z: -3 },
+      size: { x: 5, y: 5, z: 2 },
+      isBloom: false,
+      color: 0xff00ff,
+    });
+    boxItems.add({
+      name: 'pink2',
+      position: { x: 10, y: 10, z: -10 },
+      size: { x: 5, y: 5, z: 2 },
+      isBloom: false,
+      color: 0xff00ff,
+    });
+    boxItems.forEach(item => {
       const boxThreeCannonObject = new ThreeCannonObject({
-        world: world,
-        scene: globalSceneRef.current,
+        world,
+        scene,
         threeObject: () => {
-          const color = 0xff0000;
-
           let material = new THREE.MeshStandardMaterial({
-            color: color,
+            color: item.color,
             opacity: 1,
             transparent: true,
           });
@@ -159,6 +203,7 @@ const PageContents = () => {
           box.position.set(
             item.position.x, item.position.y, item.position.z
           );
+          box.name = item.name;
 
           allObjectsRef.current.add(box);
           return box;
@@ -177,23 +222,23 @@ const PageContents = () => {
     });
 
     // helpers
-    const orbitControls = new OrbitControls(camera, renderer.domElement);
+    const orbitControls = new OrbitControls(camera, canvas);
     orbitControls.update(); // render 시에도 호출해주어야 함.
 
     const axesHelper = new THREE.AxesHelper(150);
     axesHelper.layers.enable(ENTIRE_SCENE);
-    globalSceneRef.current.add(axesHelper);
+    scene.add(axesHelper);
 
     const clock = new THREE.Clock();
     let oldElapsedTime = 0;
 
     // pass setting
-    const renderPass = new RenderPass(globalSceneRef.current, camera);
+    const renderPass = new RenderPass(scene, camera);
 
     const bloomPass = new UnrealBloomPass(
       new THREE.Vector2(
-        renderer.domElement?.clientWidth,
-        renderer.domElement?.clientHeight
+        canvas?.clientWidth,
+        canvas?.clientHeight
       ),
       1.5,
       0.4,
@@ -203,18 +248,18 @@ const PageContents = () => {
     bloomPass.strength = 1.5;
     bloomPass.radius = 0;
 
-    globalBloomComposerRef.current = new EffectComposer( renderer );
-    globalBloomComposerRef.current.renderToScreen = false;
-    globalBloomComposerRef.current.addPass( renderPass );
-    globalBloomComposerRef.current.addPass( bloomPass );
+    const bloomComposer = new EffectComposer(renderer);
+    bloomComposer.renderToScreen = false;
+    bloomComposer.addPass(renderPass);
+    bloomComposer.addPass(bloomPass);
+    globalBloomComposerRef.current = bloomComposer;
 
-    globalFinalComposerRef.current = new EffectComposer( renderer );
-
+    const finalComposer = new EffectComposer(renderer);
     const finalPass = new ShaderPass(
       new THREE.ShaderMaterial( {
         uniforms: {
           baseTexture: { value: null },
-          bloomTexture: { value: globalBloomComposerRef.current.renderTarget2.texture }
+          bloomTexture: { value: bloomComposer.renderTarget2.texture }
         },
         vertexShader: `
           varying vec2 vUv;
@@ -235,9 +280,53 @@ const PageContents = () => {
       } ), 'baseTexture'
     );
     finalPass.needsSwap = true;
+    finalComposer.addPass(renderPass);
+    finalComposer.addPass(finalPass);
+    globalFinalComposerRef.current = finalComposer;
 
-    globalFinalComposerRef.current.addPass( renderPass );
-    globalFinalComposerRef.current.addPass( finalPass );
+    subscriptionsRef.current.add(fromEvent(canvas, 'click').subscribe(event => {
+      const object = getObjectFromMouseEvent({
+        event: event as MouseEvent,
+        camera,
+        scene,
+        canvasElement: canvas,
+      });
+
+      console.log('object', object);
+      if (object?.name.includes('pink')) {
+        object.layers.toggle(BLOOM_SCENE);
+      }
+    }));
+    subscriptionsRef.current.add(fromEvent(canvas, 'mousemove').pipe(
+      startWith(null),
+      pairwise(),
+    ).subscribe(([previousEvent, currentEvent]) => {
+      const previousObject = getObjectFromMouseEvent({
+        event: previousEvent as MouseEvent,
+        camera,
+        scene,
+        canvasElement: canvas,
+      });
+
+      const currentObject = getObjectFromMouseEvent({
+        event: currentEvent as MouseEvent,
+        camera,
+        scene,
+        canvasElement: canvas,
+      });
+
+      if (previousObject !== currentObject) {
+        // previousObject 입장에선 mouse out
+        // currentObject 입장에선 mouse over
+        if (previousObject?.name.includes('red') || previousObject?.name.includes('pink')) {
+          previousObject.layers.disable(BLOOM_SCENE);
+        }
+
+        if (currentObject?.name.includes('red') || currentObject?.name.includes('pink')) {
+          currentObject.layers.enable(BLOOM_SCENE);
+        }
+      }
+    }));
 
     // render
     const tick = () => {
@@ -257,7 +346,7 @@ const PageContents = () => {
     };
 
     const darkenNonBloomed = (obj: any) => {
-      // console.log(`bloomLayer.test( obj.layers )`, bloomLayer.test( obj.layers ));
+      // BLOOM LAYER (1번 레이어) 가 활성화 되어 있지 않은 mesh 들은 전부 black 색상 처리
       if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
         materials[ obj.uuid ] = obj.material;
         obj.material = darkMaterial;
@@ -265,6 +354,7 @@ const PageContents = () => {
     }
 
     const restoreMaterial = (obj: any) => {
+      // black 색상 처리 했던 mesh 들의 material 을 다시 원상 복구
       if ( materials[ obj.uuid ] ) {
         obj.material = materials[ obj.uuid ];
         delete materials[ obj.uuid ];
@@ -278,22 +368,48 @@ const PageContents = () => {
       renderer.clear();
       millisecondRef.current++;
 
-      globalSceneRef.current?.traverse( darkenNonBloomed ); // black 일 때는 bloom 효과가 적용되지 않는 점을 이용
-      globalBloomComposerRef.current?.render();
-      globalSceneRef.current?.traverse( restoreMaterial ); // black 으로 바꿧던 material 을 다시 원상 복구
-      globalFinalComposerRef.current?.render();
+      /*
+        오브젝트의 material color 가 black 일 때는 bloom 효과가 적용되지 않는 점을 이용한 것.
+        BLOOM LAYER (1번 레이어) 가 활성화 되지 않은 mesh 에 material color black 적용
+      */
+      scene.traverse(darkenNonBloomed); 
+
+      /*
+        그리고 bloomCompoer 를 통해 화면을 렌더링 하면 색상이 black 이 아닌 mesh 들에게만
+        bloom (빛 번짐) 효과가 적용됨 (이 때 화면 상에 렌더링 되지는 않음.)
+      */
+      bloomComposer.render();
+
+      /*
+        bloomCompoer 렌더링을 마친 후, bloom 을 적용하지 않기 위해 metarial color 를 black 처리 했던
+        mesh 들의 material 을 다시 원상 복구시킴 
+      */
+      scene.traverse(restoreMaterial); 
+
+      /*
+        마지막인 finalComposer 를 통해 화면에 최종 렌더링 진행.
+        finalComposer 는 bloomComposer 의 값을 참조하여 렌더링을 진행.
+      */
+      finalComposer.render();
     };
     requestAnimationFrame(render);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      subscriptionsRef.current.forEach(x => x.unsubscribe());
+    };
+  }, []);
+
   return (
     <>
-      <ThreejsCanvasBox 
+      <ThreejsCanvasBox
         ref={threejsCanvasBoxRef}
         __rendererRef={globalRendererRef}
         __camerasRef={globalCamerasRef} />
     </>
   );
-};
+};  
 
 export default IndexPage;

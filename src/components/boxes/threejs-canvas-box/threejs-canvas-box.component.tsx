@@ -1,4 +1,5 @@
 import { ForwardedRef, forwardRef, useCallback, useImperativeHandle, useRef } from "react";
+import useAddEventListener from "../../../hooks/use-add-event-listener/use-add-event-listener.hook";
 import useAddResizeEventListener from "../../../hooks/use-add-resize-event-listener/use-add-resize-event-listener.hook";
 import styles from "./threejs-canvas-box.component.module.scss";
 import { IThreejsCanvasBox } from "./threejs-canvas-box.interface";
@@ -38,6 +39,18 @@ const ThreejsCanvasBox = forwardRef((props: IThreejsCanvasBox.Props, ref: Forwar
 
   useAddResizeEventListener(divElementRef, (event) => {
     sizeCheck();
+  });
+
+  useAddEventListener(canvasRef, 'click', (event) => {
+    if (typeof props.__onClick === 'function') {
+      props.__onClick(event);
+    }
+  });
+
+  useAddEventListener(canvasRef, 'mousemove', (event) => {
+    if (typeof props.__onMousemove === 'function') {
+      props.__onMousemove(event);
+    }
   });
 
   return (

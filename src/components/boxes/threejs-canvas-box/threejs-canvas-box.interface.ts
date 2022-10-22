@@ -11,6 +11,8 @@ export declare namespace IThreejsCanvasBox {
     __style?: CSSProperties;
     __rendererRef?: { current: THREE.WebGLRenderer | undefined };
     __camerasRef?: { current: THREE.PerspectiveCamera[] | undefined };
+    __onClick?: (event: PointerEvent) => void;
+    __onMousemove?: (event: MouseEvent) => void;
 
     children?: React.ReactNode;
   }
