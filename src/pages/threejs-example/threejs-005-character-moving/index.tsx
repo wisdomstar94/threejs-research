@@ -240,12 +240,12 @@ const PageContents = () => {
       characterControlsRef.current?.switchJumpToggle(true);
       const characterThreeCannonObject = Array.from(boxThreeCannonObjectsRef.current).find(x => x.name === 'character');
       if (characterThreeCannonObject !== undefined) {
-        characterThreeCannonObject.cannonObject.velocity.y = 5;
+        characterThreeCannonObject.cannonObject.velocity.y = 6;
       }
 
       setTimeout(() => {
         characterControlsRef.current?.switchJumpToggle(false);
-      }, 600);
+      }, 700);
     } else {
       keyPressedRef.current[key.toLowerCase()] = true;
     }
@@ -285,9 +285,10 @@ const PageContents = () => {
     world.gravity.set(0, -15.82, 0);
     // world.gravity.set(0, -10, 0);
     world.broadphase = new CANNON.NaiveBroadphase();
+    // world.solver.addEquation()
     // world.solver = 10
     // world.defaultContactMaterial.contactEquationStiffness = 1e7;
-    // world.defaultContactMaterial.contactEquationRelaxation = 4;
+    world.defaultContactMaterial.contactEquationRelaxation = 4;
 
     // camera
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -345,6 +346,8 @@ const PageContents = () => {
           position: new CANNON.Vec3(object.position.x, object.position.y - 1 , object.position.z),
           shape: floorBox,
         });
+        // floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(0,0,0), -1);
+        floorBody.updateMassProperties();
         return floorBody;
       },
     });
@@ -355,10 +358,10 @@ const PageContents = () => {
       scene,
       threeObject: () => {
         const plane = new THREE.Mesh(
-          new THREE.BoxGeometry(1, 3, 10), // geometry
+          new THREE.BoxGeometry(1, 1, 10), // geometry
           new THREE.MeshStandardMaterial({ color: 0xcccccc }), // material
         );
-        plane.position.set(-5, 0, 0);
+        plane.position.set(-5.9, -0.4, 0);
         plane.castShadow = true;
         plane.receiveShadow = true;
         allObjectsRef.current.add(plane);
@@ -366,12 +369,14 @@ const PageContents = () => {
         return plane;
       },
       cannonObject: (object) => {
-        const floorBox = new CANNON.Box(new CANNON.Vec3(1, 3, 10));
+        const floorBox = new CANNON.Box(new CANNON.Vec3(0.5, 0.5, 5));
         const floorBody = new CANNON.Body({
           mass: 0,
-          position: new CANNON.Vec3(object.position.x - 0.5, object.position.y + 2 , object.position.z),
+          position: new CANNON.Vec3(object.position.x, object.position.y, object.position.z),
+          fixedRotation: true,
           shape: floorBox,
         });
+        floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
         return floorBody;
       },
     });
@@ -407,7 +412,7 @@ const PageContents = () => {
         return model;
       },
       cannonObject: (object) => {
-        const cannonBox = new CANNON.Box(new CANNON.Vec3(0.3, 1, 0.3));
+        const cannonBox = new CANNON.Box(new CANNON.Vec3(1, 1, 1));
         console.log('object.position', object.position);
         // const cannonBox = new CANNON.Sphere(3);
         const cannonBoxBody = new CANNON.Body({
