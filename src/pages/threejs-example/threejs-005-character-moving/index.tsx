@@ -138,9 +138,16 @@ class CharacterControls {
       // move model & camera
       const moveX = this.walkDirection.x * velocity * delta;
       const moveZ = this.walkDirection.z * velocity * delta;
+      const prevPosition = { ...this.model.cannonObject.position };
       this.model.cannonObject.position.x += moveX;
       this.model.cannonObject.position.z += moveZ;
-      this.updateCameraTarget(moveX, moveZ);
+      setTimeout(() => {
+        let _moveX = this.model.cannonObject.position.x - prevPosition.x;
+        let _moveZ = this.model.cannonObject.position.z - prevPosition.z;
+
+        this.updateCameraTarget(_moveX, _moveZ);
+      });
+      
     } else if (this.toggleJump) {
       this.cameraTarget.x = this.model.threeObject.position.x;
       this.cameraTarget.y = this.model.threeObject.position.y;
