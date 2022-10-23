@@ -185,7 +185,7 @@ const PageContents = () => {
   const globalRendererRef = useRef<THREE.WebGLRenderer>();
   const globalCamerasRef = useRef<THREE.PerspectiveCamera[]>([]);
   const globalScenesRef = useRef<THREE.Scene[]>([]);
-  const millisecondRef = useRef<number>(0);
+  // const millisecondRef = useRef<number>(0);
   const boxThreeCannonObjectsRef = useRef<Set<ThreeCannonObject>>(new Set<ThreeCannonObject>());
   const allObjectsRef = useRef<Set<THREE.Object3D<any>>>(new Set<THREE.Object3D<any>>());
 
@@ -393,15 +393,15 @@ const PageContents = () => {
 
     // render
     const clock = new THREE.Clock();
-    let oldElapsedTime = 0;
 
     const tick = () => {
-      const elapsedTime = clock.getElapsedTime();
-      const deltaTime = elapsedTime - oldElapsedTime;
-      oldElapsedTime = elapsedTime;
+      let mixerUpdateDelta = clock.getDelta();
+      // const elapsedTime = clock.getElapsedTime();
+      // const deltaTime = elapsedTime - oldElapsedTime;
+      // oldElapsedTime = elapsedTime;
 
       // Update physics
-      world.step(1 / 60, deltaTime, 3);
+      world.step(1 / 60, mixerUpdateDelta, 3);
       // step 은 업데이트 해주는 메소드
       // box.position.copy(new THREE.Vector3(cannonBoxBody.position.x, cannonBoxBody.position.y, cannonBoxBody.position.z));
       planeThreeCannonObject.update();
@@ -410,26 +410,18 @@ const PageContents = () => {
       });
     };
 
-    // anime({
-    //   targets: [boxThreeCannonObject.threeObject.position],
-    //   y: boxThreeCannonObject.threeObject.position.y - 150,
-    //   duration: 4000,
-    //   loop: false,
-    // });
-
     const render = () => {
       let mixerUpdateDelta = clock.getDelta();
-
-      requestAnimationFrame(render);
-      tick();
+      renderer.clear();
       if (characterControlsRef.current !== undefined) {
         characterControlsRef.current.update(mixerUpdateDelta, keyPressedRef.current);
       }
       orbitControls.update();
       // controls.update();
-      renderer.clear();
-      millisecondRef.current++;
+      // millisecondRef.current++;
       renderer.render(scene, camera);
+      tick();
+      requestAnimationFrame(render);
     };
     requestAnimationFrame(render);
   }
@@ -437,7 +429,7 @@ const PageContents = () => {
   return (
     <>
       <ThreejsCanvasBox
-        __style={{ width: '80%', height: '80%' }}
+        // __style={{ width: '80%', height: '80%' }}
         ref={threejsCanvasBoxRef}
         __rendererRef={globalRendererRef}
         __camerasRef={globalCamerasRef}
