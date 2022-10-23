@@ -25,6 +25,7 @@ class CharacterControls {
   camera: THREE.PerspectiveCamera;
 
   toggleRun: boolean = false;
+  toggleJump: boolean = false;
   currentAction: string;
 
   walkDirection = new THREE.Vector3();
@@ -77,11 +78,23 @@ class CharacterControls {
     this.toggleRun = !this.toggleRun;
   }
 
+  switchJumpToggle(value?: boolean) {
+    if (typeof value === 'boolean') {
+      this.toggleJump = value;
+      return;  
+    }
+
+    this.toggleJump = !this.toggleJump;
+  }
+
   update(delta: number, keyPressed: any) {
-    const directionPressed = Object.values(ControlKeys).some(key => keyPressed[key] === true);
+    // const directionPressed = Object.values(ControlKeys).some(key => keyPressed[key] === true);
+    const directionPressed = keyPressed[ControlKeys.ArrowDown] || keyPressed[ControlKeys.ArrowLeft] || keyPressed[ControlKeys.ArrowRight] || keyPressed[ControlKeys.ArrowTop];
 
     let play = ''
-    if (directionPressed && this.toggleRun) {
+    if (this.toggleJump) {
+      play = 'Tpose';
+    } else if (directionPressed && this.toggleRun) {
       play = 'Run';
     } else if (directionPressed) {
       play = 'Walk';
@@ -101,7 +114,7 @@ class CharacterControls {
 
     this.mixer.update(delta);
 
-    if (this.currentAction == 'Run' || this.currentAction == 'Walk') {
+    if (directionPressed) {
       // calculate towards camera direction
       var angleYCameraDirection = Math.atan2(
               (this.camera.position.x - this.model.cannonObject.position.x), 
@@ -137,9 +150,9 @@ class CharacterControls {
     this.camera.position.z += moveZ;
 
     // update camera target
-    this.cameraTarget.x = this.model.cannonObject.position.x;
-    this.cameraTarget.y = this.model.cannonObject.position.y;
-    this.cameraTarget.z = this.model.cannonObject.position.z;
+    this.cameraTarget.x = this.model.threeObject.position.x;
+    this.cameraTarget.y = this.model.threeObject.position.y;
+    this.cameraTarget.z = this.model.threeObject.position.z;
     this.orbitControls.target = this.cameraTarget;
   }
 
@@ -207,11 +220,20 @@ const PageContents = () => {
     if (key === 'Shift' && characterControlsRef.current) {
       characterControlsRef.current?.switchRunToggle(true);
     } else if (key === ' ') {
-      console.log('force!');
+      if (characterControlsRef.current?.toggleJump) {
+        return;
+      }
+
+      keyPressedRef.current[key.toLowerCase()] = true;
+      characterControlsRef.current?.switchJumpToggle(true);
       const characterThreeCannonObject = Array.from(boxThreeCannonObjectsRef.current).find(x => x.name === 'character');
       if (characterThreeCannonObject !== undefined) {
         characterThreeCannonObject.cannonObject.velocity.y = 5;
       }
+
+      setTimeout(() => {
+        characterControlsRef.current?.switchJumpToggle(false);
+      }, 600);
     } else {
       keyPressedRef.current[key.toLowerCase()] = true;
     }
@@ -321,6 +343,7 @@ const PageContents = () => {
         resolve(gltf);
       });
     }); 
+    console.log('@gltf', gltf);
 
     const model = gltf.scene;
     model.traverse(function (object: any) {
@@ -356,7 +379,7 @@ const PageContents = () => {
     const gltfAnimations: THREE.AnimationClip[] = gltf.animations;
     const mixer = new THREE.AnimationMixer(model);
     const animationsMap: Map<string, THREE.AnimationAction> = new Map();
-    gltfAnimations.filter(a => a.name !== 'TPose').forEach((a: THREE.AnimationClip) => {
+    gltfAnimations.filter(a => a.name !== '').forEach((a: THREE.AnimationClip) => {
       animationsMap.set(a.name, mixer.clipAction(a));
     });
 
