@@ -8,7 +8,7 @@ import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/
 import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.component";
 import { ThreeCannonObject } from "../../../librarys/three-object-util/three-object-util.library";
 import useFromEvent from "../../../hooks/use-from-event/use-from-event";
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 class CharacterControls {
   model: THREE.Group;
@@ -103,24 +103,24 @@ class CharacterControls {
       var directionOffset = this.directionOffset(keyPressed);
 
       // rotate model
-      this.rotateQuarternion.setFromAxisAngle(this.rotateAngle, angleYCameraDirection + directionOffset)
-      this.model.quaternion.rotateTowards(this.rotateQuarternion, 0.2)
+      this.rotateQuarternion.setFromAxisAngle(this.rotateAngle, angleYCameraDirection + directionOffset);
+      this.model.quaternion.rotateTowards(this.rotateQuarternion, 0.2);
 
       // calculate direction
-      this.camera.getWorldDirection(this.walkDirection)
-      this.walkDirection.y = 0
-      this.walkDirection.normalize()
-      this.walkDirection.applyAxisAngle(this.rotateAngle, directionOffset)
+      this.camera.getWorldDirection(this.walkDirection);
+      this.walkDirection.y = 0;
+      this.walkDirection.normalize();
+      this.walkDirection.applyAxisAngle(this.rotateAngle, directionOffset);
 
       // run/walk velocity
-      const velocity = this.currentAction == 'Run' ? this.runVelocity : this.walkVelocity
+      const velocity = this.currentAction == 'Run' ? this.runVelocity : this.walkVelocity;
 
       // move model & camera
-      const moveX = this.walkDirection.x * velocity * delta
-      const moveZ = this.walkDirection.z * velocity * delta
-      this.model.position.x += moveX
-      this.model.position.z += moveZ
-      this.updateCameraTarget(moveX, moveZ)
+      const moveX = this.walkDirection.x * velocity * delta;
+      const moveZ = this.walkDirection.z * velocity * delta;
+      this.model.position.x += moveX;
+      this.model.position.z += moveZ;
+      this.updateCameraTarget(moveX, moveZ);
     }
   }
 
@@ -131,7 +131,7 @@ class CharacterControls {
 
     // update camera target
     this.cameraTarget.x = this.model.position.x;
-    this.cameraTarget.y = this.model.position.y + 1;
+    this.cameraTarget.y = this.model.position.y;
     this.cameraTarget.z = this.model.position.z;
     this.orbitControls.target = this.cameraTarget;
   }
@@ -194,8 +194,34 @@ const PageContents = () => {
   // const keyDisplayQueue = useRef<KeyDisplay>();
 
   useEffect(() => {
+    init();
+  }, []);
+
+  useFromEvent(typeof document !== 'undefined' ? document : undefined, 'keydown', (event: KeyboardEvent) => {
+    const key = event.key;
+    if (key === 'Shift' && characterControlsRef.current) {
+      characterControlsRef.current?.switchRunToggle(true);
+    } else {
+      keyPressedRef.current[key.toLowerCase()] = true;
+    }
+  });
+
+  useFromEvent(typeof document !== 'undefined' ? document : undefined, 'keyup', (event: KeyboardEvent) => {
+    const key = event.key;
+
+    console.log('event', event);
+
+    if (key === 'Shift') {
+      characterControlsRef.current?.switchRunToggle(false);
+    } else {
+      keyPressedRef.current[key.toLowerCase()] = false;
+    }
+  });
+
+  async function init() {
     const canvas = threejsCanvasBoxRef.current?.getCanvas();
     if (canvas === null || canvas === undefined) {
+      console.log('canvas is null or undefined');
       return;
     }
 
@@ -219,7 +245,7 @@ const PageContents = () => {
     globalCamerasRef.current.push(camera);
     camera.position.set(0, 2, 5);
     camera.setFocalLength(20);
-    camera.lookAt(new THREE.Vector3(0, 0, 0));
+    // camera.lookAt(new THREE.Vector3(0, 0, 0));
 
     // scene
     const scene = new THREE.Scene();
@@ -273,6 +299,18 @@ const PageContents = () => {
       },
     });
 
+    const orbitControls = new OrbitControls(camera, canvas);
+    orbitControls.enableDamping = true;
+    orbitControls.enableZoom = false;
+    orbitControls.enablePan = false;
+    orbitControls.update(); // render 시에도 호출해주어야 함.
+    orbitControls.keys = {
+      LEFT: 'ArrowLeft', //left arrow
+      UP: 'ArrowUp', // up arrow
+      RIGHT: 'ArrowRight', // right arrow
+      BOTTOM: 'ArrowDown' // down arrow
+    };
+
     // character add
     // const boxThreeCannonObject = new ThreeCannonObject({
     //   world,
@@ -307,50 +345,44 @@ const PageContents = () => {
     //   },
     // });
     // boxThreeCannonObjectsRef.current.add(boxThreeCannonObject);
-    new GLTFLoader().load('/threejs-objects/Soldier.glb', function (gltf) {
-      const model = gltf.scene;
-      model.traverse(function (object: any) {
-        if (object.isMesh) {
-          object.castShadow = true;
-        }
-        scene.add(model);
+    const gltf = await new Promise<GLTF>(function(resolve, reject) {
+      new GLTFLoader().load('/threejs-objects/Soldier.glb', function (gltf) {
+        resolve(gltf);
       });
+    }); 
 
-      const gltfAnimations: THREE.AnimationClip[] = gltf.animations;
-      const mixer = new THREE.AnimationMixer(model);
-      const animationsMap: Map<string, THREE.AnimationAction> = new Map();
-      gltfAnimations.filter(a => a.name !== 'TPose').forEach((a: THREE.AnimationClip) => {
-        animationsMap.set(a.name, mixer.clipAction(a));
-      });
-
-      characterControlsRef.current = new CharacterControls({
-        model,
-        mixer,
-        animationsMap,
-        orbitControls,
-        camera,
-        currentAction: 'Idle',
-      });
+    // new GLTFLoader().load('/threejs-objects/Soldier.glb', function (gltf) {
+    const model = gltf.scene;
+    model.traverse(function (object: any) {
+      if (object.isMesh) {
+        object.castShadow = true;
+      }
+      scene.add(model);
     });
+
+    const gltfAnimations: THREE.AnimationClip[] = gltf.animations;
+    const mixer = new THREE.AnimationMixer(model);
+    const animationsMap: Map<string, THREE.AnimationAction> = new Map();
+    gltfAnimations.filter(a => a.name !== 'TPose').forEach((a: THREE.AnimationClip) => {
+      animationsMap.set(a.name, mixer.clipAction(a));
+    });
+
+    characterControlsRef.current = new CharacterControls({
+      model,
+      mixer,
+      animationsMap,
+      orbitControls,
+      camera,
+      currentAction: 'Idle',
+    });
+    // });
 
     // helpers
     const axesHelper = new THREE.AxesHelper(150);
     scene.add(axesHelper);
 
     // const controls = new PointerLockControls(camera, canvas);
-    // controls.addEventListener('')
-
-    const orbitControls = new OrbitControls(camera, canvas);
-    orbitControls.enableDamping = true;
-    orbitControls.enableZoom = false;
-    orbitControls.enablePan = false;
-    orbitControls.update(); // render 시에도 호출해주어야 함.
-    orbitControls.keys = {
-      LEFT: 'ArrowLeft', //left arrow
-      UP: 'ArrowUp', // up arrow
-      RIGHT: 'ArrowRight', // right arrow
-      BOTTOM: 'ArrowDown' // down arrow
-    };
+    // controls.addEventListener(''
 
     // characterControlsRef.current = new CharacterControls({
     //   model: boxThreeCannonObject,
@@ -400,28 +432,7 @@ const PageContents = () => {
       renderer.render(scene, camera);
     };
     requestAnimationFrame(render);
-  }, []);
-
-  useFromEvent(typeof document !== 'undefined' ? document : undefined, 'keydown', (event: KeyboardEvent) => {
-    const key = event.key;
-    if (key === 'Shift' && characterControlsRef.current) {
-      characterControlsRef.current?.switchRunToggle(true);
-    } else {
-      keyPressedRef.current[key.toLowerCase()] = true;
-    }
-  });
-
-  useFromEvent(typeof document !== 'undefined' ? document : undefined, 'keyup', (event: KeyboardEvent) => {
-    const key = event.key;
-
-    console.log('event', event);
-
-    if (key === 'Shift') {
-      characterControlsRef.current?.switchRunToggle(false);
-    } else {
-      keyPressedRef.current[key.toLowerCase()] = false;
-    }
-  });
+  }
 
   return (
     <>
