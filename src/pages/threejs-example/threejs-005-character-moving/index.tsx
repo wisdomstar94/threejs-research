@@ -18,7 +18,7 @@ const ControlKeys = {
 };
 
 class CharacterControls {
-  model: THREE.Group;
+  model: ThreeCannonObject;
   mixer: THREE.AnimationMixer;
   animationsMap: Map<string, THREE.AnimationAction> = new Map();
   orbitControls: OrbitControls;
@@ -39,7 +39,7 @@ class CharacterControls {
   // DIRECTIONS = ['w', 'a', 's', 'd'];
 
   constructor(params: {
-    model: THREE.Group,
+    model: ThreeCannonObject,
     mixer: THREE.AnimationMixer,
     animationsMap: Map<string, THREE.AnimationAction>,
     orbitControls: OrbitControls,
@@ -104,14 +104,14 @@ class CharacterControls {
     if (this.currentAction == 'Run' || this.currentAction == 'Walk') {
       // calculate towards camera direction
       var angleYCameraDirection = Math.atan2(
-              (this.camera.position.x - this.model.position.x), 
-              (this.camera.position.z - this.model.position.z))
+              (this.camera.position.x - this.model.cannonObject.position.x), 
+              (this.camera.position.z - this.model.cannonObject.position.z))
       // diagonal movement angle offset
       var directionOffset = this.directionOffset(keyPressed);
 
       // rotate model
       this.rotateQuarternion.setFromAxisAngle(this.rotateAngle, angleYCameraDirection + directionOffset);
-      this.model.quaternion.rotateTowards(this.rotateQuarternion, 0.2);
+      this.model.threeObject.quaternion.rotateTowards(this.rotateQuarternion, 0.2);
 
       // calculate direction
       this.camera.getWorldDirection(this.walkDirection);
@@ -125,8 +125,8 @@ class CharacterControls {
       // move model & camera
       const moveX = this.walkDirection.x * velocity * delta;
       const moveZ = this.walkDirection.z * velocity * delta;
-      this.model.position.x += moveX;
-      this.model.position.z += moveZ;
+      this.model.cannonObject.position.x += moveX;
+      this.model.cannonObject.position.z += moveZ;
       this.updateCameraTarget(moveX, moveZ);
     }
   }
@@ -137,9 +137,9 @@ class CharacterControls {
     this.camera.position.z += moveZ;
 
     // update camera target
-    this.cameraTarget.x = this.model.position.x;
-    this.cameraTarget.y = this.model.position.y;
-    this.cameraTarget.z = this.model.position.z;
+    this.cameraTarget.x = this.model.cannonObject.position.x;
+    this.cameraTarget.y = this.model.cannonObject.position.y;
+    this.cameraTarget.z = this.model.cannonObject.position.z;
     this.orbitControls.target = this.cameraTarget;
   }
 
@@ -204,8 +204,14 @@ const PageContents = () => {
 
   useFromEvent(typeof document !== 'undefined' ? document : undefined, 'keydown', (event: KeyboardEvent) => {
     const key = event.key;
-    if (key === 'x' && characterControlsRef.current) {
+    if (key === 'Shift' && characterControlsRef.current) {
       characterControlsRef.current?.switchRunToggle(true);
+    } else if (key === ' ') {
+      console.log('force!');
+      const characterThreeCannonObject = Array.from(boxThreeCannonObjectsRef.current).find(x => x.name === 'character');
+      if (characterThreeCannonObject !== undefined) {
+        characterThreeCannonObject.cannonObject.velocity.y = 5;
+      }
     } else {
       keyPressedRef.current[key.toLowerCase()] = true;
     }
@@ -216,7 +222,7 @@ const PageContents = () => {
 
     console.log('event', event);
 
-    if (key === 'x') {
+    if (key === 'Shift') {
       characterControlsRef.current?.switchRunToggle(false);
     } else {
       keyPressedRef.current[key.toLowerCase()] = false;
@@ -278,6 +284,7 @@ const PageContents = () => {
 
     // plane add
     const planeThreeCannonObject = new ThreeCannonObject({
+      name: 'plane',
       world,
       scene,
       threeObject: () => {
@@ -285,7 +292,7 @@ const PageContents = () => {
           new THREE.BoxGeometry(400, 1, 400), // geometry
           new THREE.MeshStandardMaterial({ color: 0xcccccc }), // material
         );
-        plane.position.set(0, -1, 0);
+        plane.position.set(0, -6, 0);
         plane.castShadow = true;
         plane.receiveShadow = true;
         allObjectsRef.current.add(plane);
@@ -309,47 +316,12 @@ const PageContents = () => {
     orbitControls.enablePan = false;
     orbitControls.update(); // render 시에도 호출해주어야 함.
 
-    // character add
-    // const boxThreeCannonObject = new ThreeCannonObject({
-    //   world,
-    //   scene,
-    //   threeObject: () => {
-    //     const box = new THREE.Mesh(
-    //       new THREE.BoxGeometry(5, 5, 5), // geometry
-    //       new THREE.MeshStandardMaterial({ color: 0xff0000 }), // material
-    //     );
-    //     box.position.set(
-    //       // getRandomNumber({ min: -10, max: 10 }),
-    //       0,
-    //       // getRandomNumber({ min: 40, max: 80 }),
-    //       15,
-    //       0
-    //       // getRandomNumber({ min: -10, max: 10 }),
-    //     );
-    //     box.castShadow = true;
-    //     box.receiveShadow = true;
-    //     allObjectsRef.current.add(box);
-    //     return box;
-    //   },
-    //   cannonObject: (object) => {
-    //     const cannonBox = new CANNON.Box(new CANNON.Vec3(2.5, 2.5, 2.5));
-    //     // const cannonBox = new CANNON.Sphere(3);
-    //     const cannonBoxBody = new CANNON.Body({
-    //       mass: 1,
-    //       position: new CANNON.Vec3(object.position.x, object.position.y, object.position.z),
-    //       shape: cannonBox,
-    //     });
-    //     return cannonBoxBody;
-    //   },
-    // });
-    // boxThreeCannonObjectsRef.current.add(boxThreeCannonObject);
     const gltf = await new Promise<GLTF>(function(resolve, reject) {
       new GLTFLoader().load('/threejs-objects/Soldier.glb', function (gltf) {
         resolve(gltf);
       });
     }); 
 
-    // new GLTFLoader().load('/threejs-objects/Soldier.glb', function (gltf) {
     const model = gltf.scene;
     model.traverse(function (object: any) {
       if (object.isMesh) {
@@ -357,6 +329,29 @@ const PageContents = () => {
       }
       scene.add(model);
     });
+
+    const characterThreeCannonObject = new ThreeCannonObject({
+      name: 'character',
+      world,
+      scene,
+      threeObject: () => {
+        allObjectsRef.current.add(model);
+        // model.position.y = 4;
+        return model;
+      },
+      cannonObject: (object) => {
+        const cannonBox = new CANNON.Box(new CANNON.Vec3(2, 5, 2));
+        console.log('object.position', object.position);
+        // const cannonBox = new CANNON.Sphere(3);
+        const cannonBoxBody = new CANNON.Body({
+          mass: 1,
+          position: new CANNON.Vec3(object.position.x, object.position.y, object.position.z),
+          shape: cannonBox,
+        });
+        return cannonBoxBody;
+      },
+    });
+    boxThreeCannonObjectsRef.current.add(characterThreeCannonObject);
 
     const gltfAnimations: THREE.AnimationClip[] = gltf.animations;
     const mixer = new THREE.AnimationMixer(model);
@@ -366,14 +361,13 @@ const PageContents = () => {
     });
 
     characterControlsRef.current = new CharacterControls({
-      model,
+      model: characterThreeCannonObject,
       mixer,
       animationsMap,
       orbitControls,
       camera,
       currentAction: 'Idle',
     });
-    // });
 
     // helpers
     const axesHelper = new THREE.AxesHelper(150);
@@ -392,14 +386,14 @@ const PageContents = () => {
     // render
     const clock = new THREE.Clock();
 
+    let oldElapsedTime = 0;
     const tick = () => {
-      let mixerUpdateDelta = clock.getDelta();
-      // const elapsedTime = clock.getElapsedTime();
-      // const deltaTime = elapsedTime - oldElapsedTime;
-      // oldElapsedTime = elapsedTime;
+      const elapsedTime = clock.getElapsedTime();
+      const deltaTime = elapsedTime - oldElapsedTime;
+      oldElapsedTime = elapsedTime;
 
       // Update physics
-      world.step(1 / 60, mixerUpdateDelta, 3);
+      world.step(1 / 60, deltaTime, 3);
       // step 은 업데이트 해주는 메소드
       // box.position.copy(new THREE.Vector3(cannonBoxBody.position.x, cannonBoxBody.position.y, cannonBoxBody.position.z));
       planeThreeCannonObject.update();

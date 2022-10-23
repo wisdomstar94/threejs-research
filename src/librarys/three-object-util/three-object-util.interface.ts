@@ -4,6 +4,7 @@ export declare namespace IThreeObjectLibrary {
   export type CannonObjectType = 'box' | 'sphere';
 
   export interface ThreeCannonObjectParams {
+    name: string;
     world: CANNON.World;
     scene: THREE.Scene | undefined;
     threeObject: () => THREE.Object3D<any>;

@@ -4,12 +4,14 @@ import { IThreeObjectLibrary } from './three-object-util.interface';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 export class ThreeCannonObject {
+  name: string;
   world: CANNON.World;
   scene?: THREE.Scene;
   threeObject: THREE.Object3D<any>;
   cannonObject: CANNON.Body;
 
   constructor(params: IThreeObjectLibrary.ThreeCannonObjectParams) {
+    this.name = params.name;
     this.world = params.world;
     this.scene = params.scene;
 
