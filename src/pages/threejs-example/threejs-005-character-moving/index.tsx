@@ -245,7 +245,7 @@ const PageContents = () => {
 
       setTimeout(() => {
         characterControlsRef.current?.switchJumpToggle(false);
-      }, 700);
+      }, 800);
     } else {
       keyPressedRef.current[key.toLowerCase()] = true;
     }
@@ -376,7 +376,7 @@ const PageContents = () => {
           fixedRotation: true,
           shape: floorBox,
         });
-        floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),-Math.PI/2);
+        floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),Math.PI/2);
         return floorBody;
       },
     });
