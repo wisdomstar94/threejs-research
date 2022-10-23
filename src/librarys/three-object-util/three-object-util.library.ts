@@ -18,11 +18,11 @@ export class ThreeCannonObject {
     this.threeObject = params.threeObject();
     this.cannonObject = params.cannonObject(this.threeObject);
 
-    this.cannonObject.position.copy(new CANNON.Vec3(
-      this.threeObject.position.x,
-      this.threeObject.position.y,
-      this.threeObject.position.z,
-    ));
+    // this.cannonObject.position.copy(new CANNON.Vec3(
+    //   this.threeObject.position.x,
+    //   this.threeObject.position.y,
+    //   this.threeObject.position.z,
+    // ));
 
     this.world.addBody(this.cannonObject);
     this.scene?.add(this.threeObject);

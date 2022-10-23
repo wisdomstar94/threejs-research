@@ -90,6 +90,7 @@ const PageContents = () => {
 
     // plane add
     const planeThreeCannonObject = new ThreeCannonObject({
+      name: 'plane',
       world,
       scene,
       threeObject: () => {
@@ -119,6 +120,7 @@ const PageContents = () => {
       // box add
       setTimeout(() => {
         const boxThreeCannonObject = new ThreeCannonObject({
+          name: 'boxes',
           world,
           scene,
           threeObject: () => {

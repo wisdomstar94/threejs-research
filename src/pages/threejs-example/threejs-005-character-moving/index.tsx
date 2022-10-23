@@ -276,6 +276,11 @@ const PageContents = () => {
     // cannon
     const world = new CANNON.World();
     world.gravity.set(0, -15.82, 0);
+    // world.gravity.set(0, -10, 0);
+    world.broadphase = new CANNON.NaiveBroadphase();
+    // world.solver = 10
+    // world.defaultContactMaterial.contactEquationStiffness = 1e7;
+    // world.defaultContactMaterial.contactEquationRelaxation = 4;
 
     // camera
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -316,10 +321,10 @@ const PageContents = () => {
       scene,
       threeObject: () => {
         const plane = new THREE.Mesh(
-          new THREE.BoxGeometry(400, 1, 400), // geometry
+          new THREE.BoxGeometry(10, 1, 10), // geometry
           new THREE.MeshStandardMaterial({ color: 0xcccccc }), // material
         );
-        plane.position.set(0, -6, 0);
+        plane.position.set(0, -0.52, 0);
         plane.castShadow = true;
         plane.receiveShadow = true;
         allObjectsRef.current.add(plane);
@@ -327,10 +332,10 @@ const PageContents = () => {
         return plane;
       },
       cannonObject: (object) => {
-        const floorBox = new CANNON.Box(new CANNON.Vec3(400, 1, 400));
+        const floorBox = new CANNON.Box(new CANNON.Vec3(5, 0.5, 5));
         const floorBody = new CANNON.Body({
           mass: 0,
-          position: new CANNON.Vec3(object.position.x, object.position.y, object.position.z),
+          position: new CANNON.Vec3(object.position.x, -1.52 , object.position.z),
           shape: floorBox,
         });
         return floorBody;
@@ -364,11 +369,11 @@ const PageContents = () => {
       scene,
       threeObject: () => {
         allObjectsRef.current.add(model);
-        // model.position.y = 4;
+        model.position.y = 2;
         return model;
       },
       cannonObject: (object) => {
-        const cannonBox = new CANNON.Box(new CANNON.Vec3(2, 5, 2));
+        const cannonBox = new CANNON.Box(new CANNON.Vec3(0.3, 1, 0.3));
         console.log('object.position', object.position);
         // const cannonBox = new CANNON.Sphere(3);
         const cannonBoxBody = new CANNON.Body({
@@ -424,7 +429,7 @@ const PageContents = () => {
       world.step(1 / 60, deltaTime, 3);
       // step 은 업데이트 해주는 메소드
       // box.position.copy(new THREE.Vector3(cannonBoxBody.position.x, cannonBoxBody.position.y, cannonBoxBody.position.z));
-      planeThreeCannonObject.update();
+      // planeThreeCannonObject.update();
       boxThreeCannonObjectsRef.current.forEach((boxThreeCannonObject) => {
         boxThreeCannonObject.update();
       });
