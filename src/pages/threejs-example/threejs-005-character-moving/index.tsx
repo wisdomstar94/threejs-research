@@ -17,7 +17,7 @@ class CharacterControls {
   orbitControls: OrbitControls;
   camera: THREE.PerspectiveCamera;
 
-  toggleRun: boolean = true;
+  toggleRun: boolean = false;
   currentAction: string;
 
   walkDirection = new THREE.Vector3();
@@ -62,10 +62,10 @@ class CharacterControls {
   }
 
   switchRunToggle(value?: boolean) {
-    // if (typeof value === 'boolean') {
-    //   this.toggleRun = true;
-    //   return;  
-    // }
+    if (typeof value === 'boolean') {
+      this.toggleRun = value;
+      return;  
+    }
 
     this.toggleRun = !this.toggleRun;
   }
@@ -404,8 +404,7 @@ const PageContents = () => {
 
   useFromEvent(typeof document !== 'undefined' ? document : undefined, 'keydown', (event: KeyboardEvent) => {
     const key = event.key;
-    console.log('key', key);
-    if (event.shiftKey && characterControlsRef.current) {
+    if (key === 'Shift' && characterControlsRef.current) {
       characterControlsRef.current?.switchRunToggle(true);
     } else {
       keyPressedRef.current[key.toLowerCase()] = true;
@@ -414,7 +413,14 @@ const PageContents = () => {
 
   useFromEvent(typeof document !== 'undefined' ? document : undefined, 'keyup', (event: KeyboardEvent) => {
     const key = event.key;
-    keyPressedRef.current[key.toLowerCase()] = false;
+
+    console.log('event', event);
+
+    if (key === 'Shift') {
+      characterControlsRef.current?.switchRunToggle(false);
+    } else {
+      keyPressedRef.current[key.toLowerCase()] = false;
+    }
   });
 
   return (
