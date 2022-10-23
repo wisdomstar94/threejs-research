@@ -10,6 +10,13 @@ import { ThreeCannonObject } from "../../../librarys/three-object-util/three-obj
 import useFromEvent from "../../../hooks/use-from-event/use-from-event";
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
+const ControlKeys = {
+  ArrowTop: 'w',
+  ArrowLeft: 'a',
+  ArrowRight: 'd',
+  ArrowDown: 's',
+};
+
 class CharacterControls {
   model: THREE.Group;
   mixer: THREE.AnimationMixer;
@@ -29,7 +36,7 @@ class CharacterControls {
   runVelocity = 5;
   walkVelocity = 2;
 
-  DIRECTIONS = ['w', 'a', 's', 'd'];
+  // DIRECTIONS = ['w', 'a', 's', 'd'];
 
   constructor(params: {
     model: THREE.Group,
@@ -71,7 +78,7 @@ class CharacterControls {
   }
 
   update(delta: number, keyPressed: any) {
-    const directionPressed = this.DIRECTIONS.some(key => keyPressed[key] === true);
+    const directionPressed = Object.values(ControlKeys).some(key => keyPressed[key] === true);
 
     let play = ''
     if (directionPressed && this.toggleRun) {
@@ -139,24 +146,24 @@ class CharacterControls {
   private directionOffset(keysPressed: any) {
     let directionOffset = 0 // w
 
-    if (keysPressed['w']) {
-        if (keysPressed['a']) {
-            directionOffset = Math.PI / 4 // w+a
-        } else if (keysPressed['d']) {
-            directionOffset = - Math.PI / 4 // w+d
-        }
-    } else if (keysPressed['s']) {
-        if (keysPressed['a']) {
-            directionOffset = Math.PI / 4 + Math.PI / 2 // s+a
-        } else if (keysPressed['d']) {
-            directionOffset = -Math.PI / 4 - Math.PI / 2 // s+d
-        } else {
-            directionOffset = Math.PI // s
-        }
-    } else if (keysPressed['a']) {
-        directionOffset = Math.PI / 2 // a
-    } else if (keysPressed['d']) {
-        directionOffset = - Math.PI / 2 // d
+    if (keysPressed[ControlKeys.ArrowTop]) {
+      if (keysPressed[ControlKeys.ArrowLeft]) {
+        directionOffset = Math.PI / 4 // w+a
+      } else if (keysPressed[ControlKeys.ArrowRight]) {
+        directionOffset = - Math.PI / 4 // w+d
+      }
+    } else if (keysPressed[ControlKeys.ArrowDown]) {
+      if (keysPressed[ControlKeys.ArrowLeft]) {
+        directionOffset = Math.PI / 4 + Math.PI / 2 // s+a
+      } else if (keysPressed[ControlKeys.ArrowRight]) {
+        directionOffset = -Math.PI / 4 - Math.PI / 2 // s+d
+      } else {
+        directionOffset = Math.PI // s
+      }
+    } else if (keysPressed[ControlKeys.ArrowLeft]) {
+      directionOffset = Math.PI / 2 // a
+    } else if (keysPressed[ControlKeys.ArrowRight]) {
+      directionOffset = - Math.PI / 2 // d
     }
 
     return directionOffset
@@ -185,13 +192,11 @@ const PageContents = () => {
   const globalRendererRef = useRef<THREE.WebGLRenderer>();
   const globalCamerasRef = useRef<THREE.PerspectiveCamera[]>([]);
   const globalScenesRef = useRef<THREE.Scene[]>([]);
-  // const millisecondRef = useRef<number>(0);
   const boxThreeCannonObjectsRef = useRef<Set<ThreeCannonObject>>(new Set<ThreeCannonObject>());
   const allObjectsRef = useRef<Set<THREE.Object3D<any>>>(new Set<THREE.Object3D<any>>());
 
   const characterControlsRef = useRef<CharacterControls>();
   const keyPressedRef = useRef<{ [key: string]: boolean }>({});
-  // const keyDisplayQueue = useRef<KeyDisplay>();
 
   useEffect(() => {
     init();
@@ -199,7 +204,7 @@ const PageContents = () => {
 
   useFromEvent(typeof document !== 'undefined' ? document : undefined, 'keydown', (event: KeyboardEvent) => {
     const key = event.key;
-    if (key === 'Shift' && characterControlsRef.current) {
+    if (key === 'x' && characterControlsRef.current) {
       characterControlsRef.current?.switchRunToggle(true);
     } else {
       keyPressedRef.current[key.toLowerCase()] = true;
@@ -211,7 +216,7 @@ const PageContents = () => {
 
     console.log('event', event);
 
-    if (key === 'Shift') {
+    if (key === 'x') {
       characterControlsRef.current?.switchRunToggle(false);
     } else {
       keyPressedRef.current[key.toLowerCase()] = false;
@@ -233,7 +238,6 @@ const PageContents = () => {
     renderer.toneMapping = THREE.ReinhardToneMapping;
     renderer.toneMappingExposure = Math.pow(0.9, 4.0);
     renderer.setClearColor(0xffffff, 0);
-    // renderer.setSize(800, 500); 
     globalRendererRef.current = renderer;
 
     // cannon
@@ -304,12 +308,6 @@ const PageContents = () => {
     orbitControls.enableZoom = false;
     orbitControls.enablePan = false;
     orbitControls.update(); // render 시에도 호출해주어야 함.
-    orbitControls.keys = {
-      LEFT: 'ArrowLeft', //left arrow
-      UP: 'ArrowUp', // up arrow
-      RIGHT: 'ArrowRight', // right arrow
-      BOTTOM: 'ArrowDown' // down arrow
-    };
 
     // character add
     // const boxThreeCannonObject = new ThreeCannonObject({
@@ -429,7 +427,7 @@ const PageContents = () => {
   return (
     <>
       <ThreejsCanvasBox
-        // __style={{ width: '80%', height: '80%' }}
+        __style={{ width: '80%', height: '80%' }}
         ref={threejsCanvasBoxRef}
         __rendererRef={globalRendererRef}
         __camerasRef={globalCamerasRef}
