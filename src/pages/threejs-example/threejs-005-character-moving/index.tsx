@@ -122,7 +122,7 @@ class CharacterControls {
       // diagonal movement angle offset
       var directionOffset = this.directionOffset(keyPressed);
 
-      // rotate model
+      // rotate model 
       this.rotateQuarternion.setFromAxisAngle(this.rotateAngle, angleYCameraDirection + directionOffset);
       this.model.threeObject.quaternion.rotateTowards(this.rotateQuarternion, 0.2);
 
@@ -141,6 +141,11 @@ class CharacterControls {
       this.model.cannonObject.position.x += moveX;
       this.model.cannonObject.position.z += moveZ;
       this.updateCameraTarget(moveX, moveZ);
+    } else if (this.toggleJump) {
+      this.cameraTarget.x = this.model.threeObject.position.x;
+      this.cameraTarget.y = this.model.threeObject.position.y;
+      this.cameraTarget.z = this.model.threeObject.position.z;
+      this.orbitControls.target = this.cameraTarget;
     }
   }
 
