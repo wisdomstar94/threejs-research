@@ -133,7 +133,7 @@ class CharacterControls {
       this.walkDirection.applyAxisAngle(this.rotateAngle, directionOffset);
 
       // run/walk velocity
-      const velocity = this.currentAction == 'Run' ? this.runVelocity : this.walkVelocity;
+      const velocity = this.toggleRun ? this.runVelocity : this.walkVelocity;
 
       // move model & camera
       const moveX = this.walkDirection.x * velocity * delta;
