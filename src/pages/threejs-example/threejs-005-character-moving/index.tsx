@@ -358,10 +358,10 @@ const PageContents = () => {
       scene,
       threeObject: () => {
         const plane = new THREE.Mesh(
-          new THREE.BoxGeometry(1, 1, 10), // geometry
+          new THREE.BoxGeometry(1, 10, 10), // geometry
           new THREE.MeshStandardMaterial({ color: 0xcccccc }), // material
         );
-        plane.position.set(-5.9, -0.4, 0);
+        plane.position.set(-5.4, -0.8, 0);
         plane.castShadow = true;
         plane.receiveShadow = true;
         allObjectsRef.current.add(plane);
@@ -376,7 +376,7 @@ const PageContents = () => {
           fixedRotation: true,
           shape: floorBox,
         });
-        floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),Math.PI/2);
+        // floorBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1,0,0),Math.PI/2);
         return floorBody;
       },
     });
