@@ -321,10 +321,10 @@ const PageContents = () => {
       scene,
       threeObject: () => {
         const plane = new THREE.Mesh(
-          new THREE.BoxGeometry(10, 1, 10), // geometry
+          new THREE.BoxGeometry(10, 5, 10), // geometry
           new THREE.MeshStandardMaterial({ color: 0xcccccc }), // material
         );
-        plane.position.set(0, -0.52, 0);
+        plane.position.set(0, -2.52, 0);
         plane.castShadow = true;
         plane.receiveShadow = true;
         allObjectsRef.current.add(plane);
@@ -332,10 +332,37 @@ const PageContents = () => {
         return plane;
       },
       cannonObject: (object) => {
-        const floorBox = new CANNON.Box(new CANNON.Vec3(5, 0.5, 5));
+        const floorBox = new CANNON.Box(new CANNON.Vec3(5, 2.5, 5));
         const floorBody = new CANNON.Body({
           mass: 0,
-          position: new CANNON.Vec3(object.position.x, -1.52 , object.position.z),
+          position: new CANNON.Vec3(object.position.x, object.position.y - 1 , object.position.z),
+          shape: floorBox,
+        });
+        return floorBody;
+      },
+    });
+
+    const leftPlaneThreeCannonObject = new ThreeCannonObject({
+      name: 'plane',
+      world,
+      scene,
+      threeObject: () => {
+        const plane = new THREE.Mesh(
+          new THREE.BoxGeometry(1, 3, 10), // geometry
+          new THREE.MeshStandardMaterial({ color: 0xcccccc }), // material
+        );
+        plane.position.set(-5, 0, 0);
+        plane.castShadow = true;
+        plane.receiveShadow = true;
+        allObjectsRef.current.add(plane);
+        console.log('plane', plane);
+        return plane;
+      },
+      cannonObject: (object) => {
+        const floorBox = new CANNON.Box(new CANNON.Vec3(1, 3, 10));
+        const floorBody = new CANNON.Body({
+          mass: 0,
+          position: new CANNON.Vec3(object.position.x - 0.5, object.position.y + 2 , object.position.z),
           shape: floorBox,
         });
         return floorBody;
