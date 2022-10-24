@@ -19,6 +19,7 @@ const SideBar = (props: ISideBar.Props) => {
     { menuName: 'threejs-005-character-moving', menuLink: '/threejs-example/threejs-005-character-moving' },
     { menuName: 'threejs-006-ammojs-test', menuLink: '/threejs-example/threejs-006-ammojs-test' },
     { menuName: 'threejs-007-ammojs-custom-class-test', menuLink: '/threejs-example/threejs-007-ammojs-custom-class-test' },
+    { menuName: 'threejs-008-character-moving-with-ammo', menuLink: '/threejs-example/threejs-008-character-moving-with-ammo' },
   ]);
 
   useEffect(() => {

@@ -37,7 +37,7 @@ export class ThreeCannonObject {
 
 export class ThreeAmmoObjectManager {
   world: Ammo.btDiscreteDynamicsWorld;
-  scene: THREE.Scene; 
+  scene: THREE.Scene;
   objectItems: IThreeObjectLibrary.ThreeAmmoObjectItem[];
 
   constructor(params: IThreeObjectLibrary.ThreeAmmoObjectManagerConstructorParams) {
@@ -64,13 +64,24 @@ export class ThreeAmmoObjectManager {
     const ammoJsObject = params.ammoJsObject(params.objectOptions, threeJsObject);
     world.addRigidBody(ammoJsObject);
 
-    const _ThreeAmmoObject = {
+    const tmpTrans = new Ammo.btTransform();
+
+    const _ThreeAmmoObject: IThreeObjectLibrary.ThreeAmmoObjectItem = {
       name: params.name,
+      isRotationSync: params.isRotationSync,
       world: world,
       scene: scene,
       threeJsObject: threeJsObject,
       ammoJsObject: ammoJsObject,
-      tmpTrans: new Ammo.btTransform(),
+      getAmmoTransfrom: (deltaTime: number, item: IThreeObjectLibrary.ThreeAmmoObjectItem) => {
+        this.world.stepSimulation(deltaTime, 10);
+        const ms = item.ammoJsObject.getMotionState();
+        if (ms) {
+          ms.getWorldTransform(tmpTrans);
+        }
+        return tmpTrans;
+      },
+      tmpTrans: tmpTrans,
     };
 
     this.objectItems.push(_ThreeAmmoObject);
@@ -109,7 +120,9 @@ export class ThreeAmmoObjectManager {
         }
 
         objThree.position.set(p.x(), p.y(), p.z());
-        objThree.quaternion.set(q.x(), q.y(), q.z(), q.w());
+        if (item.isRotationSync !== false) {
+          objThree.quaternion.set(q.x(), q.y(), q.z(), q.w());
+        }
       }
     });
   }

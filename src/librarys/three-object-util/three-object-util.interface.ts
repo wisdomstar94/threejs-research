@@ -59,6 +59,7 @@ export declare namespace IThreeObjectLibrary {
   export interface AddThreeAmmoObjectParams {
     objectOptions: ThreeAmmoObjectOptions;
     name: string;
+    isRotationSync?: boolean
     world?: Ammo.btDiscreteDynamicsWorld;
     scene?: THREE.Scene; 
     threeJsObject: (objectOptions: ThreeAmmoObjectOptions) => THREE.Object3D<THREE.Event>;
@@ -67,10 +68,12 @@ export declare namespace IThreeObjectLibrary {
 
   export interface ThreeAmmoObjectItem {
     name: string;
+    isRotationSync?: boolean
     world?: Ammo.btDiscreteDynamicsWorld;
     scene?: THREE.Scene; 
     threeJsObject: THREE.Object3D<THREE.Event>;
     ammoJsObject: Ammo.btRigidBody;
+    getAmmoTransfrom: (deltaTime: number, item: ThreeAmmoObjectItem) => Ammo.btTransform;
     tmpTrans: Ammo.btTransform;
   }
 }

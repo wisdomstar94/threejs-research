@@ -73,8 +73,6 @@ const PageContents = () => {
 
     // });
     await Ammo();
-    const rigidBodies: THREE.Mesh<THREE.SphereGeometry, THREE.MeshPhongMaterial>[] = [];
-    const tmpTrans = new Ammo.btTransform();
 
     const physicsWorld = setupPhysicsWorld();
     console.log('physicsWorld', physicsWorld);
