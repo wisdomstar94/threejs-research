@@ -26,4 +26,51 @@ export declare namespace IThreeObjectLibrary {
     path: string;
     manager?: THREE.LoadingManager;
   }
+
+
+  
+
+  export interface ThreeAmmoObjectManagerConstructorParams {
+    world: Ammo.btDiscreteDynamicsWorld;
+    scene: THREE.Scene; 
+  }
+
+  export interface ThreeAmmoObjectOptions {
+    pos: {
+      x: number;
+      y: number;
+      z: number;
+    };
+    size?: {
+      x: number;
+      y: number;
+      z: number;
+    };
+    radius?: number;
+    quat: {
+      x: number;
+      y: number;
+      z: number;
+      w: number;
+    };
+    mass: number;
+  }
+
+  export interface AddThreeAmmoObjectParams {
+    objectOptions: ThreeAmmoObjectOptions;
+    name: string;
+    world?: Ammo.btDiscreteDynamicsWorld;
+    scene?: THREE.Scene; 
+    threeJsObject: (objectOptions: ThreeAmmoObjectOptions) => THREE.Object3D<THREE.Event>;
+    ammoJsObject: (objectOptions: ThreeAmmoObjectOptions, threeJsObject: THREE.Object3D<THREE.Event>) => Ammo.btRigidBody;
+  }
+
+  export interface ThreeAmmoObjectItem {
+    name: string;
+    world?: Ammo.btDiscreteDynamicsWorld;
+    scene?: THREE.Scene; 
+    threeJsObject: THREE.Object3D<THREE.Event>;
+    ammoJsObject: Ammo.btRigidBody;
+    tmpTrans: Ammo.btTransform;
+  }
 }

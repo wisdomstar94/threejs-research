@@ -18,6 +18,7 @@ const SideBar = (props: ISideBar.Props) => {
     { menuName: 'threejs-004-multiple-box-cannon', menuLink: '/threejs-example/threejs-004-multiple-box-cannon' },
     { menuName: 'threejs-005-character-moving', menuLink: '/threejs-example/threejs-005-character-moving' },
     { menuName: 'threejs-006-ammojs-test', menuLink: '/threejs-example/threejs-006-ammojs-test' },
+    { menuName: 'threejs-007-ammojs-custom-class-test', menuLink: '/threejs-example/threejs-007-ammojs-custom-class-test' },
   ]);
 
   useEffect(() => {

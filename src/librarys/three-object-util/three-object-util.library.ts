@@ -35,6 +35,86 @@ export class ThreeCannonObject {
   }
 }
 
+export class ThreeAmmoObjectManager {
+  world: Ammo.btDiscreteDynamicsWorld;
+  scene: THREE.Scene; 
+  objectItems: IThreeObjectLibrary.ThreeAmmoObjectItem[];
+
+  constructor(params: IThreeObjectLibrary.ThreeAmmoObjectManagerConstructorParams) {
+    const {
+      world,
+      scene,
+    } = params;
+    this.world = world;
+    this.scene = scene;
+    this.objectItems = [];
+  }
+
+  add(params: IThreeObjectLibrary.AddThreeAmmoObjectParams) {
+    if (this.objectItems.filter(x => x.name === params.name).length > 0) {
+      throw new Error(`ThreeAmmoObject의 name은 고유해야 합니다. "${params.name}" 이라는 name은 중복되었습니다.`);
+    }
+
+    const world = params.world ?? this.world;
+    const scene = params.scene ?? this.scene;
+
+    const threeJsObject = params.threeJsObject(params.objectOptions);
+    scene.add(threeJsObject);
+
+    const ammoJsObject = params.ammoJsObject(params.objectOptions, threeJsObject);
+    world.addRigidBody(ammoJsObject);
+
+    const _ThreeAmmoObject = {
+      name: params.name,
+      world: world,
+      scene: scene,
+      threeJsObject: threeJsObject,
+      ammoJsObject: ammoJsObject,
+      tmpTrans: new Ammo.btTransform(),
+    };
+
+    this.objectItems.push(_ThreeAmmoObject);
+    return _ThreeAmmoObject;
+  }
+
+  getObject(name: string): null | IThreeObjectLibrary.ThreeAmmoObjectItem {
+    const targetObject = this.objectItems.find(x => x.name === name);
+    if (targetObject === undefined) {
+      return null;
+    }
+    return targetObject;
+  }
+
+  update(deltaTime: number): void {
+    // Step world
+    this.world.stepSimulation(deltaTime, 10);
+
+    // console.log('update', deltaTime);
+
+    // Update rigid bodies
+    // for (const item of this.objectItems) {
+    this.objectItems.forEach((item) => {
+      let objThree = item.threeJsObject;
+      let objAmmo = item.ammoJsObject;
+      let ms = objAmmo.getMotionState();
+      if (ms) {
+        ms.getWorldTransform(item.tmpTrans);
+        let p = item.tmpTrans.getOrigin();
+        let q = item.tmpTrans.getRotation();
+        // console.log('objThree', objThree);
+        // console.log(JSON.stringify(p));
+        // console.log({ x: p.x(), y: p.y(), z: p.z() });
+        if (item.name === 'ball3') {
+          // console.log({ x: p.x(), y: p.y(), z: p.z() });
+        }
+
+        objThree.position.set(p.x(), p.y(), p.z());
+        objThree.quaternion.set(q.x(), q.y(), q.z(), q.w());
+      }
+    });
+  }
+}
+
 const getIntersects = (params: IThreeObjectLibrary.GetObjectRequireParams) => {
   if (params.event === null) {
     return [];
