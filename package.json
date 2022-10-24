@@ -32,6 +32,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/ammo.js": "github:osman-turan/ammo.js-typings",
     "animejs": "^3.2.1",
     "cannon-es": "^0.20.0",
     "dotenv": "^16.0.3",

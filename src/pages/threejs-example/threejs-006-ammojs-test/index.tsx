@@ -3,12 +3,10 @@ import { useEffect, useRef } from "react";
 import CommonLayout from "../../../components/layouts/common-layout/common-layout.component";
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-import * as CANNON from 'cannon-es';
 import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.interface";
 import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.component";
 import { ThreeCannonObject } from "../../../librarys/three-object-util/three-object-util.library";
-import useFromEvent from "../../../hooks/use-from-event/use-from-event";
-import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+// declare const AMMO: Ammo;
 
 const IndexPage = () => {
   return (
@@ -17,6 +15,7 @@ const IndexPage = () => {
         <title>threejs-006-ammojs-test</title>
         <meta name="description" content="threejs-006-ammojs-test page!" />
         <link rel="icon" href="/favicon.ico" />
+        <script src="/js/ammo.js" async />
       </Head>
 
       <CommonLayout>
@@ -37,7 +36,20 @@ const PageContents = () => {
 
   useEffect(() => {
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function setupPhysicsWorld() {
+    console.log('setupPhysicsWorld');
+    const collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
+    const dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
+    const overlappingPairCache = new Ammo.btDbvtBroadphase() as any;
+    const solver = new Ammo.btSequentialImpulseConstraintSolver();
+
+    const physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+    physicsWorld.setGravity(new Ammo.btVector3(0, -10, 0));
+    return physicsWorld;
+  }
 
   async function init() {
     const canvas = threejsCanvasBoxRef.current?.getCanvas();
@@ -56,15 +68,19 @@ const PageContents = () => {
     renderer.setClearColor(0xffffff, 0);
     globalRendererRef.current = renderer;
 
-    // cannon
-    const world = new CANNON.World();
-    world.gravity.set(0, -15.82, 0);
-    // world.gravity.set(0, -10, 0);
-    world.broadphase = new CANNON.NaiveBroadphase();
-    // world.solver.addEquation()
-    // world.solver = 10
-    // world.defaultContactMaterial.contactEquationStiffness = 1e7;
-    world.defaultContactMaterial.contactEquationRelaxation = 4;
+    // ammo.js world
+    // Ammo().then((event) => {
+    //   console.log('ammo.event', event);
+
+    // });
+    await Ammo();
+    const rigidBodies: THREE.Mesh<THREE.SphereGeometry, THREE.MeshPhongMaterial>[] = [];
+    const tmpTrans = new Ammo.btTransform();
+
+    const physicsWorld = setupPhysicsWorld();
+    console.log('physicsWorld', physicsWorld);
+
+    
 
     // camera
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -99,7 +115,92 @@ const PageContents = () => {
     allObjectsRef.current.add(spotLight);
 
     // plane add
+    {
+      const pos = { 
+        x: 0, 
+        y: 0, 
+        z: 0 
+      };
+      const scale = { 
+        x: 50, 
+        y: 2, 
+        z: 50 
+      };
+      const quat = { 
+        x: 0, 
+        y: 0, 
+        z: 0, 
+        w: 1 
+      };
+      const mass = 0;
 
+      // three.js
+      const blockPlane = new THREE.Mesh(new THREE.BoxGeometry(), new THREE.MeshPhongMaterial({color: 0xa0afa4}));
+      blockPlane.position.set(pos.x, pos.y, pos.z);
+      blockPlane.scale.set(scale.x, scale.y, scale.z);
+      blockPlane.castShadow = true;
+      blockPlane.receiveShadow = true;
+      scene.add(blockPlane);
+
+      // ammo.js
+      const transform = new Ammo.btTransform();
+      transform.setIdentity();
+      transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+      transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
+      const motionState = new Ammo.btDefaultMotionState( transform );
+
+      const colShape = new Ammo.btBoxShape( new Ammo.btVector3( scale.x * 0.5, scale.y * 0.5, scale.z * 0.5 ) );
+      colShape.setMargin( 0.05 );
+
+      const localInertia = new Ammo.btVector3( 0, 0, 0 );
+      colShape.calculateLocalInertia( mass, localInertia );
+
+      const rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, colShape, localInertia );
+      const body = new Ammo.btRigidBody( rbInfo );
+
+      physicsWorld.addRigidBody( body );
+    }
+
+
+    // add ball
+    {
+      let pos = {x: 0, y: 2, z: 0};
+      let radius = 0.1;
+      let quat = {x: 0, y: 0, z: 0, w: 1};
+      let mass = 1;
+
+      // three.js
+      let ball = new THREE.Mesh(new THREE.SphereGeometry(radius), new THREE.MeshPhongMaterial({color: 0xff0505}));
+
+      ball.position.set(pos.x, pos.y, pos.z);
+      
+      ball.castShadow = true;
+      ball.receiveShadow = true;
+
+      scene.add(ball);
+
+      // ammo.js
+      let transform = new Ammo.btTransform();
+      transform.setIdentity();
+      transform.setOrigin( new Ammo.btVector3( pos.x, pos.y, pos.z ) );
+      transform.setRotation( new Ammo.btQuaternion( quat.x, quat.y, quat.z, quat.w ) );
+      let motionState = new Ammo.btDefaultMotionState( transform );
+
+      let colShape = new Ammo.btSphereShape( radius );
+      colShape.setMargin( 0.05 );
+
+      let localInertia = new Ammo.btVector3( 0, 0, 0 );
+      colShape.calculateLocalInertia( mass, localInertia );
+
+      let rbInfo = new Ammo.btRigidBodyConstructionInfo( mass, motionState, colShape, localInertia );
+      let body = new Ammo.btRigidBody( rbInfo );
+
+
+      physicsWorld.addRigidBody( body );
+      
+      ball.userData.physicsBody = body;
+      rigidBodies.push(ball);
+    }
 
 
 
@@ -129,30 +230,32 @@ const PageContents = () => {
     // render
     const clock = new THREE.Clock();
 
-    let oldElapsedTime = 0;
-    const tick = () => {
-      const elapsedTime = clock.getElapsedTime();
-      const deltaTime = elapsedTime - oldElapsedTime;
-      oldElapsedTime = elapsedTime;
+    const updatePhysics = (deltaTime: number) => {
+      // Step world
+      physicsWorld.stepSimulation( deltaTime, 10 );
 
-      // Update physics
-      world.step(1 / 60, deltaTime, 3);
-      // step 은 업데이트 해주는 메소드
-      // box.position.copy(new THREE.Vector3(cannonBoxBody.position.x, cannonBoxBody.position.y, cannonBoxBody.position.z));
-      // planeThreeCannonObject.update();
-      boxThreeCannonObjectsRef.current.forEach((boxThreeCannonObject) => {
-        boxThreeCannonObject.update();
-      });
+      // Update rigid bodies
+      for ( let i = 0; i < rigidBodies.length; i++ ) {
+        let objThree = rigidBodies[ i ];
+        let objAmmo = objThree.userData.physicsBody;
+        let ms = objAmmo.getMotionState();
+        if ( ms ) {
+          ms.getWorldTransform( tmpTrans );
+          let p = tmpTrans.getOrigin();
+          let q = tmpTrans.getRotation();
+          objThree.position.set( p.x(), p.y(), p.z() );
+          objThree.quaternion.set( q.x(), q.y(), q.z(), q.w() );
+        }
+      }
     };
 
     const render = () => {
-      let mixerUpdateDelta = clock.getDelta();
+      let deltaTime = clock.getDelta();
       renderer.clear();
       orbitControls.update();
-      // controls.update();
-      // millisecondRef.current++;
       renderer.render(scene, camera);
-      tick();
+      // tick();
+      updatePhysics( deltaTime );
       requestAnimationFrame(render);
     };
     requestAnimationFrame(render);
@@ -160,6 +263,7 @@ const PageContents = () => {
 
   return (
     <>
+      {/* <Script src="/js/ammo.js"></Script> */}
       <ThreejsCanvasBox
         __style={{ width: '80%', height: '80%' }}
         ref={threejsCanvasBoxRef}
