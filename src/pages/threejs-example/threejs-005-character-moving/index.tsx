@@ -6,9 +6,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as CANNON from 'cannon-es';
 import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.interface";
 import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.component";
-import { CharacterControlsCannon, ThreeCannonObjectManager } from "../../../librarys/three-object-util/three-object-util.library";
 import useFromEvent from "../../../hooks/use-from-event/use-from-event";
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { CharacterControlsCannon, ThreeCannonObjectManager } from "../../../librarys/three-cannon-object-util/three-cannon-object-util.library";
 
 const IndexPage = () => {
   return (
