@@ -86,7 +86,8 @@ export class ThreeCannonObjectManager {
   }
 
   update(deltaTime: number): void {
-    this.world.step(1 / 60, deltaTime, 3);
+    // this.world.step(1 / 60, deltaTime, 3);
+    this.world.step(deltaTime);
 
     this.objectItems.forEach((item) => {
       item.threeJsObject.position.x = item.cannonJsObject.position.x;
