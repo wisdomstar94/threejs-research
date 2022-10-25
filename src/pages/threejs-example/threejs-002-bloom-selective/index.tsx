@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.component";
 import CommonLayout from "../../../components/layouts/common-layout/common-layout.component";
 import * as THREE from 'three';
@@ -7,11 +7,12 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
-import { getObjectFromMouseEvent, ThreeCannonObject } from "../../../librarys/three-object-util/three-object-util.library";
+import { getObjectFromMouseEvent } from "../../../librarys/three-object-util/three-object-util.library";
 import * as CANNON from 'cannon-es';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.interface";
 import { fromEvent, pairwise, startWith, Subscription } from 'rxjs';
+import { ThreeCannonObjectManager } from "../../../librarys/three-cannon-object-util/three-cannon-object-util.library";
 
 interface BoxInterfacae {
   name: string;
@@ -54,9 +55,6 @@ const PageContents = () => {
   const globalScenesRef = useRef<THREE.Scene[]>([]);
   const globalBloomComposerRef = useRef<EffectComposer>();
   const globalFinalComposerRef = useRef<EffectComposer>();
-  const millisecondRef = useRef<number>(0);
-  const boxThreeCannonObjectsRef = useRef<Set<ThreeCannonObject>>(new Set<ThreeCannonObject>());
-  const allObjectsRef = useRef<Set<THREE.Object3D<any>>>(new Set<THREE.Object3D<any>>());
   const subscriptionsRef = useRef<Set<Subscription>>(new Set());
 
   useEffect(() => {
@@ -99,6 +97,12 @@ const PageContents = () => {
     scene.background = null;
     globalScenesRef.current.push(scene);
 
+    // threeCannonObjectManager
+    const threeCannonObjectManager = new ThreeCannonObjectManager({
+      world,
+      scene,
+    });
+
     // light
     const worldLight = new THREE.AmbientLight(0xffffff, 1);
     worldLight.layers.enableAll();
@@ -119,30 +123,35 @@ const PageContents = () => {
     spotLight.shadow.mapSize.height = 1024 * 10;
     spotLight.layers.enableAll();
     scene.add(spotLight);
-    allObjectsRef.current.add(spotLight);
 
     // plane add
-    const planeThreeCannonObject = new ThreeCannonObject({
-      world: world,
-      scene: scene,
-      threeObject: () => {
+    const planeThreeCannonObject = threeCannonObjectManager.add({
+      name: 'plane',
+      objectOptions:{ 
+        pos: { x: 0, y: -1, z: 0 },
+        quat: { x: 0, y: 0, z: 0, w: 1 },
+        size: { x: 400, y: 2, z: 400 },
+        mass: 0,
+      },
+      threeJsObject: (objectOptions) => {
         const plane = new THREE.Mesh(
-          new THREE.BoxGeometry(400, 2, 400), // geometry
+          new THREE.BoxGeometry(objectOptions.size?.x ?? 100, objectOptions.size?.y ?? 1, objectOptions.size?.z ?? 100), // geometry
           new THREE.MeshStandardMaterial({
             color: 0xcccccc,
           }), // material
         );
-        plane.position.set(0, -1, 0);
+        plane.position.set(objectOptions.pos.x, objectOptions.pos.y, objectOptions.pos.z);
         plane.castShadow = true;
         plane.receiveShadow = true;
-        allObjectsRef.current.add(plane);
+        // plane.layers.set(ENTIRE_SCENE);
+        plane.name = 'plane';
         return plane;
       },
-      cannonObject: (object) => {
-        const floorBox = new CANNON.Box(new CANNON.Vec3(400 / 2, 2 / 2, 400 / 2));
+      cannonJsObject: (objectOptions, threeJsObject) => {
+        const floorBox = new CANNON.Box(new CANNON.Vec3((objectOptions.size?.x ?? 1) / 2, (objectOptions.size?.y ?? 1) / 2, (objectOptions.size?.z ?? 1) / 2));
         const floorBody = new CANNON.Body({
-          mass: 0,
-          position: new CANNON.Vec3(object.position.x / 2, object.position.y / 2, object.position.z / 2),
+          mass: objectOptions.mass,
+          position: new CANNON.Vec3(objectOptions.pos.x, objectOptions.pos.y, objectOptions.pos.z),
           shape: floorBox,
         });
         return floorBody;
@@ -179,11 +188,18 @@ const PageContents = () => {
       isBloom: false,
       color: 0xff00ff,
     });
-    boxItems.forEach(item => {
-      const boxThreeCannonObject = new ThreeCannonObject({
+    Array.from(boxItems).forEach((item, index) => {
+      const boxThreeCannonObject = threeCannonObjectManager.add({
+        name: 'box' + index,
+        objectOptions: {
+          pos: item.position,
+          size: item.size,
+          quat: { x: 0, y: 0, z: 0, w: 1 },
+          mass: 1,
+        },
         world,
         scene,
-        threeObject: () => {
+        threeJsObject: (objectOptions) => {
           let material = new THREE.MeshStandardMaterial({
             color: item.color,
             opacity: 1,
@@ -191,7 +207,7 @@ const PageContents = () => {
           });
 
           const box = new THREE.Mesh(
-            new THREE.BoxGeometry(item.size.x, item.size.y, item.size.z), // geometry
+            new THREE.BoxGeometry(objectOptions.size?.x ?? 100, objectOptions.size?.y ?? 1, objectOptions.size?.z ?? 100), // geometry
             material,
           );
 
@@ -201,24 +217,21 @@ const PageContents = () => {
             box.layers.enable(BLOOM_SCENE);
           }
           box.position.set(
-            item.position.x, item.position.y, item.position.z
+            objectOptions.pos.x, objectOptions.pos.y, objectOptions.pos.z
           );
           box.name = item.name;
-
-          allObjectsRef.current.add(box);
           return box;
         },
-        cannonObject: (object) => {
-          const cannonBox = new CANNON.Box(new CANNON.Vec3(item.size.x / 2, item.size.y / 2, item.size.z / 2));
+        cannonJsObject: (objectOptions, threeJsObject) => {
+          const cannonBox = new CANNON.Box(new CANNON.Vec3((objectOptions.size?.x ?? 1) / 2, (objectOptions.size?.y ?? 1) / 2, (objectOptions.size?.z ?? 1) / 2));
           const cannonBoxBody = new CANNON.Body({
-            mass: 1,
-            position: new CANNON.Vec3(object.position.x / 2, object.position.y / 2, object.position.z / 2),
+            mass: objectOptions.mass,
+            position: new CANNON.Vec3(threeJsObject.position.x, threeJsObject.position.y, threeJsObject.position.z),
             shape: cannonBox,
           });
           return cannonBoxBody;
         },
       });
-      boxThreeCannonObjectsRef.current.add(boxThreeCannonObject);
     });
 
     // helpers
@@ -228,9 +241,6 @@ const PageContents = () => {
     const axesHelper = new THREE.AxesHelper(150);
     axesHelper.layers.enable(ENTIRE_SCENE);
     scene.add(axesHelper);
-
-    const clock = new THREE.Clock();
-    let oldElapsedTime = 0;
 
     // pass setting
     const renderPass = new RenderPass(scene, camera);
@@ -292,11 +302,11 @@ const PageContents = () => {
         canvasElement: canvas,
       });
 
-      console.log('object', object);
       if (object?.name.includes('pink')) {
         object.layers.toggle(BLOOM_SCENE);
       }
     }));
+
     subscriptionsRef.current.add(fromEvent(canvas, 'mousemove').pipe(
       startWith(null),
       pairwise(),
@@ -328,23 +338,6 @@ const PageContents = () => {
       }
     }));
 
-    // render
-    const tick = () => {
-      const elapsedTime = clock.getElapsedTime();
-      const deltaTime = elapsedTime - oldElapsedTime;
-      oldElapsedTime = elapsedTime;
-
-      // Update physics
-      world.step(1 / 60, deltaTime, 3);
-      // step 은 업데이트 해주는 메소드
-
-      // box.position.copy(new THREE.Vector3(cannonBoxBody.position.x, cannonBoxBody.position.y, cannonBoxBody.position.z));
-      planeThreeCannonObject.update();
-      boxThreeCannonObjectsRef.current.forEach((boxThreeCannonObject) => {
-        boxThreeCannonObject.update();
-      });
-    };
-
     const darkenNonBloomed = (obj: any) => {
       // BLOOM LAYER (1번 레이어) 가 활성화 되어 있지 않은 mesh 들은 전부 black 색상 처리
       if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
@@ -361,13 +354,11 @@ const PageContents = () => {
       }
     }
 
+    const clock = new THREE.Clock();
+
     const render = () => {
-      requestAnimationFrame(render);
-      tick();
-
+      let deltaTime = clock.getDelta();
       renderer.clear();
-      millisecondRef.current++;
-
       /*
         오브젝트의 material color 가 black 일 때는 bloom 효과가 적용되지 않는 점을 이용한 것.
         BLOOM LAYER (1번 레이어) 가 활성화 되지 않은 mesh 에 material color black 적용
@@ -386,13 +377,16 @@ const PageContents = () => {
       */
       scene.traverse(restoreMaterial); 
 
+      threeCannonObjectManager.update(deltaTime);
+
       /*
         마지막인 finalComposer 를 통해 화면에 최종 렌더링 진행.
         finalComposer 는 bloomComposer 의 값을 참조하여 렌더링을 진행.
       */
       finalComposer.render();
+      requestAnimationFrame(render);
     };
-    requestAnimationFrame(render);
+    render();
   }, []);
 
   useEffect(() => {
