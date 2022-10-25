@@ -202,9 +202,9 @@ export class CharacterControlsCannon {
         this.updateCameraTarget(_moveX, _moveZ);
       });
     } else if (this.toggleJump) {
-      this.cameraTarget.x = this.model.threeJsObject.position.x;
-      this.cameraTarget.y = this.model.threeJsObject.position.y;
-      this.cameraTarget.z = this.model.threeJsObject.position.z;
+      this.cameraTarget.x = this.model.cannonJsObject.position.x;
+      this.cameraTarget.y = this.model.cannonJsObject.position.y;
+      this.cameraTarget.z = this.model.cannonJsObject.position.z;
       this.orbitControls.target = this.cameraTarget;
     }
   }
@@ -215,9 +215,9 @@ export class CharacterControlsCannon {
     this.camera.position.z += moveZ;
 
     // update camera target
-    this.cameraTarget.x = this.model.threeJsObject.position.x;
-    this.cameraTarget.y = this.model.threeJsObject.position.y;
-    this.cameraTarget.z = this.model.threeJsObject.position.z;
+    this.cameraTarget.x = this.model.cannonJsObject.position.x;
+    this.cameraTarget.y = this.model.cannonJsObject.position.y;
+    this.cameraTarget.z = this.model.cannonJsObject.position.z;
     this.orbitControls.target = this.cameraTarget;
   }
 
