@@ -7,10 +7,10 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
-import { ThreeCannonObject } from "../../../librarys/three-object-util/three-object-util.library";
 import * as CANNON from 'cannon-es';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.interface";
+import { ThreeCannonObjectManager } from "../../../librarys/three-cannon-object-util/three-cannon-object-util.library";
 
 const IndexPage = () => {
   return (
@@ -37,8 +37,6 @@ const PageContents = () => {
   const globalBloomComposerRef = useRef<EffectComposer>();
   const globalFinalComposerRef = useRef<EffectComposer>();
   const millisecondRef = useRef<number>(0);
-  const boxThreeCannonObjectsRef = useRef<Set<ThreeCannonObject>>(new Set<ThreeCannonObject>());
-  const allObjectsRef = useRef<Set<THREE.Object3D<any>>>(new Set<THREE.Object3D<any>>());
 
   useEffect(() => {
     const canvas = threejsCanvasBoxRef.current?.getCanvas();
@@ -80,6 +78,12 @@ const PageContents = () => {
     scene.background = null;
     globalScenesRef.current.push(scene);
 
+    // ThreeCannonObjectManager
+    const threeCannonObjectManager = new ThreeCannonObjectManager({
+      world,
+      scene,
+    });
+
     // light
     const worldLight = new THREE.AmbientLight(0xffffff, 1);
     worldLight.layers.enableAll();
@@ -100,30 +104,35 @@ const PageContents = () => {
     spotLight.shadow.mapSize.height = 1024 * 10;
     spotLight.layers.enableAll();
     scene.add(spotLight);
-    allObjectsRef.current.add(spotLight);
 
     // plane add
-    const planeThreeCannonObject = new ThreeCannonObject({
+    const planeThreeCannonObject = threeCannonObjectManager.add({
+      name: 'plane',
+      objectOptions: {
+        pos: { x: 0, y: -1, z: 0 },
+        size: { x: 400, y: 2, z: 400 },
+        quat: { x: 0, y: 0, z: 0, w: 1 },
+        mass: 0,
+      },
       world: world,
       scene: scene,
-      threeObject: () => {
+      threeJsObject: (objectOptions) => {
         const plane = new THREE.Mesh(
-          new THREE.BoxGeometry(400, 2, 400), // geometry
+          new THREE.BoxGeometry(objectOptions.size?.x ?? 1, objectOptions.size?.y ?? 1, objectOptions.size?.z ?? 1), // geometry
           new THREE.MeshStandardMaterial({
             color: 0xcccccc,
           }), // material
         );
-        plane.position.set(0, -1, 0);
+        plane.position.set(objectOptions.pos.x, objectOptions.pos.y, objectOptions.pos.z);
         plane.castShadow = true;
         plane.receiveShadow = true;
-        allObjectsRef.current.add(plane);
         return plane;
       },
-      cannonObject: (object) => {
-        const floorBox = new CANNON.Box(new CANNON.Vec3(400 / 2, 2 / 2, 400 / 2));
+      cannonJsObject: (objectOptions, threeJsObject) => {
+        const floorBox = new CANNON.Box(new CANNON.Vec3((objectOptions.size?.x ?? 1) / 2, (objectOptions.size?.y ?? 1) / 2, (objectOptions.size?.z ?? 1) / 2));
         const floorBody = new CANNON.Body({
-          mass: 0,
-          position: new CANNON.Vec3(object.position.x / 2, object.position.y / 2, object.position.z / 2),
+          mass: objectOptions.mass,
+          position: new CANNON.Vec3(threeJsObject.position.x / 2, threeJsObject.position.y / 2, threeJsObject.position.z / 2),
           shape: floorBox,
         });
         return floorBody;
@@ -134,11 +143,19 @@ const PageContents = () => {
     const boxItems = new Set<{ position: { x: number; y: number; z: number; }; size: { x: number; y: number; z: number; }; isBloom: boolean;}>();
     boxItems.add({ position: { x: 1, y: 10, z: -3 }, size: { x: 5, y: 5, z: 2 }, isBloom: true, });
     boxItems.add({ position: { x: 1, y: 10, z: -7 }, size: { x: 5, y: 5, z: 2 }, isBloom: false, });
-    boxItems.forEach((item) => {
-      const boxThreeCannonObject = new ThreeCannonObject({
+    
+    Array.from(boxItems).forEach((item, index) => {
+      const boxThreeCannonObject = threeCannonObjectManager.add({
+        name: 'box' + index,
+        objectOptions: {
+          pos: item.position,
+          quat: { x: 0, y: 0, z: 0, w: 1 },
+          size: item.size,
+          mass: 1
+        },
         world: world,
         scene: scene,
-        threeObject: () => {
+        threeJsObject: (objectOptions) => {
           const color = 0xff0000;
 
           let material = new THREE.MeshStandardMaterial({
@@ -148,7 +165,7 @@ const PageContents = () => {
           });
 
           const box = new THREE.Mesh(
-            new THREE.BoxGeometry(item.size.x, item.size.y, item.size.z), // geometry
+            new THREE.BoxGeometry(objectOptions.size?.x ?? 1, objectOptions.size?.y ?? 1, objectOptions.size?.z ?? 1), // geometry
             material,
           );
 
@@ -158,23 +175,21 @@ const PageContents = () => {
             box.layers.enable(BLOOM_SCENE);
           }
           box.position.set(
-            item.position.x, item.position.y, item.position.z
+            objectOptions.pos.x, objectOptions.pos.y, objectOptions.pos.z
           );
 
-          allObjectsRef.current.add(box);
           return box;
         },
-        cannonObject: (object) => {
-          const cannonBox = new CANNON.Box(new CANNON.Vec3(item.size.x / 2, item.size.y / 2, item.size.z / 2));
+        cannonJsObject: (objectOptions, threeJsObject) => {
+          const cannonBox = new CANNON.Box(new CANNON.Vec3((objectOptions.size?.x ?? 1) / 2, (objectOptions.size?.y ?? 1) / 2, (objectOptions.size?.z ?? 1) / 2));
           const cannonBoxBody = new CANNON.Body({
             mass: 1,
-            position: new CANNON.Vec3(object.position.x / 2, object.position.y / 2, object.position.z / 2),
+            position: new CANNON.Vec3(objectOptions.pos.x, objectOptions.pos.y, objectOptions.pos.z),
             shape: cannonBox,
           });
           return cannonBoxBody;
         },
       });
-      boxThreeCannonObjectsRef.current.add(boxThreeCannonObject);
     });
 
     // helpers
@@ -184,9 +199,6 @@ const PageContents = () => {
     const axesHelper = new THREE.AxesHelper(150);
     axesHelper.layers.enable(ENTIRE_SCENE);
     scene.add(axesHelper);
-
-    const clock = new THREE.Clock();
-    let oldElapsedTime = 0;
 
     // pass setting
     const renderPass = new RenderPass(scene, camera);
@@ -242,23 +254,6 @@ const PageContents = () => {
     finalComposer.addPass(renderPass);
     finalComposer.addPass(finalPass);
 
-    // render
-    const tick = () => {
-      const elapsedTime = clock.getElapsedTime();
-      const deltaTime = elapsedTime - oldElapsedTime;
-      oldElapsedTime = elapsedTime;
-
-      // Update physics
-      world.step(1 / 60, deltaTime, 3);
-      // step 은 업데이트 해주는 메소드
-
-      // box.position.copy(new THREE.Vector3(cannonBoxBody.position.x, cannonBoxBody.position.y, cannonBoxBody.position.z));
-      planeThreeCannonObject.update();
-      boxThreeCannonObjectsRef.current.forEach((boxThreeCannonObject) => {
-        boxThreeCannonObject.update();
-      });
-    };
-
     const darkenNonBloomed = (obj: any) => {
       // console.log(`bloomLayer.test( obj.layers )`, bloomLayer.test( obj.layers ));
       if ( obj.isMesh && bloomLayer.test( obj.layers ) === false ) {
@@ -274,19 +269,19 @@ const PageContents = () => {
       }
     }
 
+    const clock = new THREE.Clock();
+
     const render = () => {
+      let deltaTime = clock.getDelta();
       requestAnimationFrame(render);
-      tick();
-
       renderer.clear();
-      millisecondRef.current++;
-
+      threeCannonObjectManager.update(deltaTime);
       scene.traverse( darkenNonBloomed ); // black 일 때는 bloom 효과가 적용되지 않는 점을 이용
       bloomComposer.render();
       scene.traverse( restoreMaterial ); // black 으로 바꿧던 material 을 다시 원상 복구
       finalComposer.render();
     };
-    requestAnimationFrame(render);
+    render();
   }, []);
 
   return (
