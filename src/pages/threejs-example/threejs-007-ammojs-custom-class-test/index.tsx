@@ -5,8 +5,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.interface";
 import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.component";
-import { ThreeAmmoObjectManager } from "../../../librarys/three-object-util/three-object-util.library";
 import { getRandomNumber } from "../../../librarys/random-util/random-util.library";
+import { ThreeAmmoObjectManager } from "../../../librarys/three-ammo-object-util/three-ammo-object-util.library";
 
 const IndexPage = () => {
   return (
@@ -68,12 +68,7 @@ const PageContents = () => {
     globalRendererRef.current = renderer;
 
     // ammo.js world
-    // Ammo().then((event) => {
-    //   console.log('ammo.event', event);
-
-    // });
     await Ammo();
-
     const physicsWorld = setupPhysicsWorld();
     console.log('physicsWorld', physicsWorld);
 
@@ -82,7 +77,6 @@ const PageContents = () => {
     globalCamerasRef.current.push(camera);
     camera.position.set(0, 2, 5);
     camera.setFocalLength(20);
-    // camera.lookAt(new THREE.Vector3(0, 0, 0));
 
     // scene
     const scene = new THREE.Scene();
@@ -111,7 +105,6 @@ const PageContents = () => {
     spotLight.shadow.bias = -0.00001;
     spotLight.shadow.mapSize.width = 1024 * 10;
     spotLight.shadow.mapSize.height = 1024 * 10;
-    // spotLight.lookAt(new THREE.Vector3(30, 30, 30));
     scene.add(spotLight);
     allObjectsRef.current.add(spotLight);
 
@@ -226,7 +219,7 @@ const PageContents = () => {
       threeAmmoObjectManager.update( deltaTime );
       requestAnimationFrame(render);
     };
-    requestAnimationFrame(render);
+    render();
   }
 
   return (
