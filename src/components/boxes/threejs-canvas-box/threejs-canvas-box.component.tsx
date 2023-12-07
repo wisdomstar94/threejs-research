@@ -57,7 +57,7 @@ const ThreejsCanvasBox = forwardRef((props: IThreejsCanvasBox.Props, ref: Forwar
   useEffect(() => {
     return () => {
       props.__scenesRef?.current?.forEach((scene) => {
-        const objects: THREE.Object3D<THREE.Event>[] = [];
+        const objects: THREE.Object3D<THREE.Object3DEventMap>[] = [];
         scene.traverse((obj) => objects.push(obj));
         console.log('objects', objects);
         objects.forEach((object) => {
