@@ -1,10 +1,6 @@
 import * as THREE from 'three';
-import * as CANNON from 'cannon-es';
 import { IThreeObjectLibrary } from './three-object-util.interface';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-
-
 
 const getIntersects = (params: IThreeObjectLibrary.GetObjectRequireParams) => {
   if (params.event === null) {
@@ -32,7 +28,7 @@ const getIntersects = (params: IThreeObjectLibrary.GetObjectRequireParams) => {
   return intersects;
 };
 
-export const getObjectFromMouseEvent = (params: IThreeObjectLibrary.GetObjectRequireParams): null | THREE.Object3D<THREE.Event> => {
+export const getObjectFromMouseEvent = (params: IThreeObjectLibrary.GetObjectRequireParams): null | THREE.Object3D<THREE.Object3DEventMap> => {
   if (params.event === null) {
     return null;
   }

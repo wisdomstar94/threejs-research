@@ -1,30 +1,14 @@
-import Head from "next/head";
+"use client"
+
 import { useEffect, useRef } from "react";
 import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.component";
 import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.interface";
-import CommonLayout from "../../../components/layouts/common-layout/common-layout.component";
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { ThreeCannonObjectManager } from "../../../librarys/three-cannon-object-util/three-cannon-object-util.library";
 
-const IndexPage = () => {
-  return (
-    <>
-      <Head>
-        <title>threejs-003-glass-material</title>
-        <meta name="description" content="threejs-003-glass-material page!" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <CommonLayout>
-        <PageContents />
-      </CommonLayout>
-    </>
-  );
-};
-
-const PageContents = () => {
+export default function Page() {
   const threejsCanvasBoxRef = useRef<IThreejsCanvasBox.RefObject>(null);
 
   const globalRendererRef = useRef<THREE.WebGLRenderer>();
@@ -209,6 +193,4 @@ const PageContents = () => {
         __scenesRef={globalScenesRef} />
     </>
   );
-};  
-
-export default IndexPage;
+}

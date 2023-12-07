@@ -1,6 +1,6 @@
-import Head from "next/head";
-import { useEffect, useRef } from "react";
-import CommonLayout from "../../../components/layouts/common-layout/common-layout.component";
+"use client"
+
+import { useEffect, useRef, useState } from "react";
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.interface";
@@ -8,25 +8,9 @@ import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/three
 import useFromEvent from "../../../hooks/use-from-event/use-from-event";
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { CharacterControlsAmmo, ThreeAmmoObjectManager } from "../../../librarys/three-ammo-object-util/three-ammo-object-util.library";
+import Script from "next/script";
 
-const IndexPage = () => {
-  return (
-    <>
-      <Head>
-        <title>threejs-008-character-moving-with-ammo</title>
-        <meta name="description" content="threejs-008-character-moving-with-ammo page!" />
-        <link rel="icon" href="/favicon.ico" />
-        <script src="/js/ammo.js" async />
-      </Head>
-
-      <CommonLayout>
-        <PageContents />
-      </CommonLayout>
-    </>
-  );
-};
-
-const PageContents = () => {
+export default function Page() {
   const threejsCanvasBoxRef = useRef<IThreejsCanvasBox.RefObject>(null);
 
   const globalRendererRef = useRef<THREE.WebGLRenderer>();
@@ -37,8 +21,16 @@ const PageContents = () => {
   const characterControlsRef = useRef<CharacterControlsAmmo>();
   const keyPressedRef = useRef<{ [key: string]: boolean }>({});
 
+  const [isAmmoLoaded, setIsAmmoLoaded] = useState(false);
+
   useEffect(() => {
+    if (isAmmoLoaded === false) return;
+    console.log('@window.Ammo', window.Ammo);
     init();
+  }, [isAmmoLoaded]);
+
+  useEffect(() => {
+    setIsAmmoLoaded(window.Ammo !== undefined);
   }, []);
 
   useFromEvent(typeof document !== 'undefined' ? document : undefined, 'keydown', (event: KeyboardEvent) => {
@@ -324,6 +316,7 @@ const PageContents = () => {
 
   return (
     <>
+      <Script src="/js/ammo.js" onLoad={() => setIsAmmoLoaded(true)}></Script>
       <ThreejsCanvasBox
         __style={{ width: '80%', height: '80%' }}
         ref={threejsCanvasBoxRef}
@@ -332,6 +325,4 @@ const PageContents = () => {
         __scenesRef={globalScenesRef} />
     </>
   );
-};  
-
-export default IndexPage;
+}

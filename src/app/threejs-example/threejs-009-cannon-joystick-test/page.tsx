@@ -1,6 +1,6 @@
-import Head from "next/head";
+"use client"
+
 import { useCallback, useEffect, useRef } from "react";
-import CommonLayout from "../../../components/layouts/common-layout/common-layout.component";
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import * as CANNON from 'cannon-es';
@@ -12,23 +12,7 @@ import { CharacterControlsCannon, ThreeCannonObjectManager } from "../../../libr
 import JoystickBox from "../../../components/boxes/joystick-box/joystick-box.component";
 import { IJoystickBox } from "../../../components/boxes/joystick-box/joystick-box.interface";
 
-const IndexPage = () => {
-  return (
-    <>
-      <Head>
-        <title>threejs-009-cannon-custom-shape-test</title>
-        <meta name="description" content="threejs-009-cannon-custom-shape-test page!" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <CommonLayout>
-        <PageContents />
-      </CommonLayout>
-    </>
-  );
-};
-
-const PageContents = () => {
+export default function Page() {
   const threejsCanvasBoxRef = useRef<IThreejsCanvasBox.RefObject>(null);
 
   const globalRendererRef = useRef<THREE.WebGLRenderer>();
@@ -359,6 +343,4 @@ const PageContents = () => {
         __onJumpTab={joystickJumpTab} />
     </>
   );
-};  
-
-export default IndexPage;
+}

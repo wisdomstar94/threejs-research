@@ -1,4 +1,4 @@
-import { useRouter } from "next/router";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRecoilState } from "recoil";
 import { commonLayoutModeStateAtom } from "../common-layout/common-layout.atom";
@@ -11,6 +11,7 @@ const SideBar = (props: ISideBar.Props) => {
   const [isActiveTransition, setIsActiveTransition] = useState(false);
 
   const router = useRouter();
+  const pathname = usePathname();
   const [menuItems, setMenuItems] = useState<ISideBar.MenuItem[]>([
     { menuName: 'threejs-001-bloom', menuLink: '/threejs-example/threejs-001-bloom' },
     { menuName: 'threejs-002-bloom-selective', menuLink: '/threejs-example/threejs-002-bloom-selective' },
@@ -38,8 +39,8 @@ const SideBar = (props: ISideBar.Props) => {
   }, [setCommonLayoutModeState]);
 
   const isMenuActive = useCallback((item: ISideBar.MenuItem) => {
-    const asPath = router.asPath;
-    const isActive = asPath.includes(item.menuLink);
+    
+    const isActive = pathname.includes(item.menuLink);
     if (isActive && typeof document !== 'undefined') {
       const offsetTop = document.querySelector<HTMLElement>('.ul-menu-list')?.querySelector<HTMLElement>(`li[data-value=${item.menuName}]`)?.offsetTop;
       if (typeof offsetTop === 'number') {
@@ -49,7 +50,7 @@ const SideBar = (props: ISideBar.Props) => {
       }
     }
     return isActive;
-  }, [router.asPath]);
+  }, [pathname]);
 
   return (
     <>

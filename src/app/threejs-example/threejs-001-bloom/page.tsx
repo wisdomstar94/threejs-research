@@ -1,7 +1,7 @@
-import Head from "next/head";
+"use client"
+
 import { useEffect, useRef } from "react";
 import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.component";
-import CommonLayout from "../../../components/layouts/common-layout/common-layout.component";
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
@@ -12,23 +12,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.interface";
 import { ThreeCannonObjectManager } from "../../../librarys/three-cannon-object-util/three-cannon-object-util.library";
 
-const IndexPage = () => {
-  return (
-    <>
-      <Head>
-        <title>threejs-001-bloom</title>
-        <meta name="description" content="threejs-001-bloom page!" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <CommonLayout>
-        <PageContents />
-      </CommonLayout>
-    </>
-  );
-};
-
-const PageContents = () => {
+export default function Page() {
   const threejsCanvasBoxRef = useRef<IThreejsCanvasBox.RefObject>(null);
 
   const globalRendererRef = useRef<THREE.WebGLRenderer>();
@@ -294,5 +278,3 @@ const PageContents = () => {
     </>
   );
 };
-
-export default IndexPage;

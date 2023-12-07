@@ -1,7 +1,7 @@
-import Head from "next/head";
+"use client"
+
 import { useEffect, useRef } from "react";
 import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.component";
-import CommonLayout from "../../../components/layouts/common-layout/common-layout.component";
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
@@ -30,24 +30,7 @@ interface BoxInterfacae {
   color: number;
 }
 
-
-const IndexPage = () => {
-  return (
-    <>
-      <Head>
-        <title>threejs-002-bloom-selective</title>
-        <meta name="description" content="threejs-002-bloom-selective page!" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-
-      <CommonLayout>
-        <PageContents />
-      </CommonLayout>
-    </>
-  );
-};
-
-const PageContents = () => {
+export default function Page() {
   const threejsCanvasBoxRef = useRef<IThreejsCanvasBox.RefObject>(null);
 
   const globalRendererRef = useRef<THREE.WebGLRenderer>();
@@ -405,6 +388,4 @@ const PageContents = () => {
         __scenesRef={globalScenesRef} />
     </>
   );
-};  
-
-export default IndexPage;
+}

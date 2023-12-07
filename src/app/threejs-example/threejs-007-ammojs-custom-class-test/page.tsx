@@ -1,31 +1,15 @@
-import Head from "next/head";
-import { useEffect, useRef } from "react";
-import CommonLayout from "../../../components/layouts/common-layout/common-layout.component";
+"use client"
+
+import { useEffect, useRef, useState } from "react";
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { IThreejsCanvasBox } from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.interface";
 import ThreejsCanvasBox from "../../../components/boxes/threejs-canvas-box/threejs-canvas-box.component";
 import { getRandomNumber } from "../../../librarys/random-util/random-util.library";
 import { ThreeAmmoObjectManager } from "../../../librarys/three-ammo-object-util/three-ammo-object-util.library";
+import Script from "next/script";
 
-const IndexPage = () => {
-  return (
-    <>
-      <Head>
-        <title>threejs-007-ammojs-custom-class-test</title>
-        <meta name="description" content="threejs-007-ammojs-custom-class-test page!" />
-        <link rel="icon" href="/favicon.ico" />
-        <script src="/js/ammo.js" async />
-      </Head>
-
-      <CommonLayout>
-        <PageContents />
-      </CommonLayout>
-    </>
-  );
-};
-
-const PageContents = () => {
+export default function Page() {
   const threejsCanvasBoxRef = useRef<IThreejsCanvasBox.RefObject>(null);
 
   const globalRendererRef = useRef<THREE.WebGLRenderer>();
@@ -33,9 +17,17 @@ const PageContents = () => {
   const globalScenesRef = useRef<THREE.Scene[]>([]);
   const allObjectsRef = useRef<Set<THREE.Object3D<any>>>(new Set<THREE.Object3D<any>>());
 
+  const [isAmmoLoaded, setIsAmmoLoaded] = useState(false);
+
   useEffect(() => {
+    if (isAmmoLoaded === false) return;
+    console.log('@window.Ammo', window.Ammo);
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAmmoLoaded]);
+
+  useEffect(() => {
+    setIsAmmoLoaded(window.Ammo !== undefined);
   }, []);
 
   function setupPhysicsWorld() {
@@ -68,7 +60,9 @@ const PageContents = () => {
     globalRendererRef.current = renderer;
 
     // ammo.js world
-    await Ammo();
+    if (typeof Ammo === 'function') {
+      await Ammo();
+    }
     const physicsWorld = setupPhysicsWorld();
     console.log('physicsWorld', physicsWorld);
 
@@ -224,7 +218,7 @@ const PageContents = () => {
 
   return (
     <>
-      {/* <Script src="/js/ammo.js"></Script> */}
+      <Script src="/js/ammo.js" onLoad={() => setIsAmmoLoaded(true)}></Script>
       <ThreejsCanvasBox
         __style={{ width: '80%', height: '80%' }}
         ref={threejsCanvasBoxRef}
@@ -233,6 +227,4 @@ const PageContents = () => {
         __scenesRef={globalScenesRef} />
     </>
   );
-};  
-
-export default IndexPage;
+}
