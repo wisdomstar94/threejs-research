@@ -33,15 +33,15 @@ export declare namespace IThreeCannonObjectUtil {
     isRotationSync?: boolean
     world?: CANNON.World;
     scene?: THREE.Scene; 
-    threeJsObject: (objectOptions: ThreeCannonObjectOptions) => THREE.Object3D<THREE.Event>;
-    cannonJsObject: (objectOptions: ThreeCannonObjectOptions, threeJsObject: THREE.Object3D<THREE.Event>) => CANNON.Body;
+    threeJsObject: (objectOptions: ThreeCannonObjectOptions) => THREE.Object3D<THREE.Object3DEventMap>;
+    cannonJsObject: (objectOptions: ThreeCannonObjectOptions, threeJsObject: THREE.Object3D<THREE.Object3DEventMap>) => CANNON.Body;
   }
 
   export interface ThreeCannonObjectItem {
     name: string;
     world?: CANNON.World;
     scene?: THREE.Scene; 
-    threeJsObject: THREE.Object3D<THREE.Event>;
+    threeJsObject: THREE.Object3D<THREE.Object3DEventMap>;
     cannonJsObject: CANNON.Body;
   }
 }
